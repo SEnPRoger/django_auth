@@ -38,7 +38,7 @@ class AccountRegister(APIView):
             response = Response({'status':'successfully registered',
                                 'access_token':access_token},
                                 status=status.HTTP_200_OK)
-            JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh_cookie')
+            JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
             response['X-CSRFToken'] = csrf.get_token(request)
                 
             return response
@@ -62,7 +62,7 @@ class AccountLogin(APIView):
                 response = Response({'status':'successfully logged',
                                     'access_token':access_token},
                                     status=status.HTTP_200_OK)
-                JWTToken.set_refresh_to_header(response, refresh_token, header_name='REFRESH-TOKEN')
+                JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
                 response['X-CSRFToken'] = csrf.get_token(request)
                 return response
             else:
