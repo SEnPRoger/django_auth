@@ -64,6 +64,8 @@ class Account(AbstractBaseUser):
     changed_nickname    = models.DateTimeField(verbose_name='Changed nickname date', default=timezone.now, help_text='Nickname can be changed every 24 hours')
 
     #related_posts       = models.ManyToManyField('post.Post', blank=True, related_name='posts_set')
+    blocked_accounts    = models.ManyToManyField("self", verbose_name = 'Blocked accounts', blank=True, null=True, related_name='blocked_accounts_set', 
+                                                    symmetrical=False)
     subscribers         = models.ManyToManyField("self", blank=True, null=True, related_name='subscribers_set', 
                                                     symmetrical=False)
 

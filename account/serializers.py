@@ -12,7 +12,7 @@ class AccountRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'email', 'account_photo', 'password', 'password2']
+        fields = ['username', 'nickname', 'email', 'birth_date', 'account_photo', 'password', 'password2']
         extra_kwargs = {
             'password' : {'write_only':True}
         }
@@ -44,3 +44,27 @@ class AccountLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ['nickname_or_email', 'password']
+
+class AccountGetPublic(serializers.ModelSerializer):
+
+    subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
+    # posts_count = serializers.SerializerMethodField('get_posts_count')
+    # photos_count = serializers.SerializerMethodField('get_photos_count')
+
+    def get_subscribers_count(self, account):
+        return account.subscribers.count()
+    
+    # def get_posts_count(self, account):
+    #     return account.related_posts.count()
+    
+    # def get_photos_count(self, account):
+    #     return Photo.objects.filter(author=account).count()
+
+    class Meta:
+        model = Account
+        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'links', 'subscribers_count']
+
+class AccountGetPrivate(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['nickname', 'birth_date', 'city', 'country', 'email']

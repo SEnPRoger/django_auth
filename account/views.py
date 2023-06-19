@@ -29,22 +29,20 @@ class AccountRegister(APIView):
                 extension = str(file).split('.')[1]
             
                 if extension == 'gif' and request.user.is_moderator == False:
-                    return Response({'status':'you cannot upload gif as account photo'},
+                    return Response({'error':'you cannot upload gif as account photo'},
                                     status=status.HTTP_403_FORBIDDEN)
             else:
                 account.account_photo = file
                 account.save()
             refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
-            response = Response({'status':'successfully registered',
-                                'access_token':access_token},
+            response = Response({'access_token':access_token},
                                 status=status.HTTP_200_OK)
             JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
             response['X-CSRFToken'] = csrf.get_token(request)
                 
             return response
         else:
-            return Response({'status':'register failed',
-                         'error':serializer.errors},
+            return Response({'error':serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
         
 class AccountLogin(APIView):
@@ -59,8 +57,7 @@ class AccountLogin(APIView):
             if account is not None:
                 login(request, account)
                 refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
-                response = Response({'status':'successfully logged',
-                                    'access_token':access_token},
+                response = Response({'access_token':access_token},
                                     status=status.HTTP_200_OK)
                 JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
                 response['X-CSRFToken'] = csrf.get_token(request)
@@ -69,6 +66,33 @@ class AccountLogin(APIView):
                 return Response({'status':'account not found!'},
                                     status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response({'status':'login failed',
-                         'error':serializer.errors},
+            return Response({'error':serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
+        
+class AccountView(APIView):
+    def get(self, request, nickname=None, format=None):
+        try:
+            account = Account.objects.get(nickname=nickname)
+            if request.user.is_authenticated:
+                if account.blocked_accounts.filter(id=request.user.id).exists():
+                    return Response(
+                        {'detail': 'you have been blocked by the owner of the account'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            serializer = AccountGetPublic(account)
+        except ObjectDoesNotExist:
+            return Response({'detail':'profile not found'},
+                             status=status.HTTP_200_OK)
+        return Response({'data':serializer.data,
+                             'profile':request.user.nickname},
+                             status=status.HTTP_200_OK)
+
+class AccountPrivateView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, format=None):
+        serializer = AccountGetPrivate(request.user)
+        response = Response({'data':serializer.data},
+                            status=status.HTTP_200_OK)
+        
+        response['X-CSRFToken'] = csrf.get_token(request)
+        return response
