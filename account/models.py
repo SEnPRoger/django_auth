@@ -72,6 +72,7 @@ class Account(AbstractBaseUser):
                                                     symmetrical=False)
 
     is_verify           = models.BooleanField(verbose_name = 'Is verified account ☑️', default=False)
+    is_blocked          = models.BooleanField(verbose_name = '⛔️ Is account blocked', default=False)
     is_moderator        = models.BooleanField(default=False)
     is_active           = models.BooleanField(default=True)
     is_admin            = models.BooleanField(default=False)
