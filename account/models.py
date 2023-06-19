@@ -54,7 +54,7 @@ class Account(AbstractBaseUser):
     nickname            = models.CharField(verbose_name='👤 Nickname', max_length=32, blank=False, unique=True, help_text='Nickname should be unique')
     email               = models.EmailField(verbose_name='📬 Email', max_length=32, blank=False, unique=True, help_text='Email should be unique')
 
-    birth_date          = models.DateTimeField(verbose_name='🥳 Birth date', blank=True, null=True)
+    birth_date          = models.DateField(verbose_name='🥳 Birth date', blank=True, null=True)
     
     account_photo       = models.ImageField(verbose_name='🖼 Change account photo', upload_to=username_photo_path, blank=True, null=True)
     account_banner      = models.ImageField(verbose_name='Change account banner', upload_to=username_photo_path, blank=True, null=True)
