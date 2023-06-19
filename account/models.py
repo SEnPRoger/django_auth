@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 class AccountManager(BaseUserManager):
-    def create_user(self, username, nickname, email, account_photo=None, password=None, password2=None):
+    def create_user(self, username, nickname, email, birth_date=None, account_photo=None, password=None, password2=None):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -21,6 +21,7 @@ class AccountManager(BaseUserManager):
             username=username,
             nickname=nickname,
             account_photo=account_photo,
+            birth_date=birth_date,
         )
 
         user.set_password(password)
@@ -37,6 +38,7 @@ class AccountManager(BaseUserManager):
             password=password,
             username=username,
             nickname=nickname,
+            birth_date=None,
         )
         user.is_admin = True
         user.save(using=self._db)
