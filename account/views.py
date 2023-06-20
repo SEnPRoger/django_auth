@@ -35,7 +35,8 @@ class AccountRegister(APIView):
                 account.account_photo = file
                 account.save()
             refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
-            response = Response({'access_token':access_token},
+            response = Response({'access_token':access_token,
+                                 'nickname':account.nickname},
                                 status=status.HTTP_200_OK)
             JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
             response['X-CSRFToken'] = csrf.get_token(request)
@@ -57,7 +58,8 @@ class AccountLogin(APIView):
             if account is not None:
                 login(request, account)
                 refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
-                response = Response({'access_token':access_token},
+                response = Response({'access_token':access_token,
+                                     'nickname':account.nickname},
                                     status=status.HTTP_200_OK)
                 JWTToken.set_refresh_to_header(response, refresh_token, header_name='refresh-token')
                 response['X-CSRFToken'] = csrf.get_token(request)
