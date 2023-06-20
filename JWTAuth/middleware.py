@@ -20,7 +20,7 @@ class UserHeaderMiddleWare(MiddlewareMixin):
         from rest_framework.renderers import JSONRenderer
         from JWTAuth.views import JWTToken
         
-        if request.headers['refresh-token']:
+        if request.headers.get('refresh-token'):
         #if request.COOKIES.get('refresh_cookie'):
             try:
                 raw_refresh_token = JWTToken.get_refresh_token(request, header_name='refresh-token')
