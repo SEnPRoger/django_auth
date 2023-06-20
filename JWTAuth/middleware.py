@@ -3,7 +3,7 @@ from django.utils.deprecation import MiddlewareMixin
 from rest_framework.response import Response
 from rest_framework import status
 
-class UserCookieMiddleWare(MiddlewareMixin):
+class UserHeaderMiddleWare(MiddlewareMixin):
     """
     Middleware to set user cookie
     If user is authenticated and there is no cookie, set the cookie,
