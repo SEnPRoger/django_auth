@@ -79,12 +79,15 @@ class AccountView(APIView):
                         {'detail': 'you have been blocked by the owner of the account'},
                         status=status.HTTP_403_FORBIDDEN
                     )
+                profile_nickname = request.user.nickname
+            else:
+                profile_nickname = None
             serializer = AccountGetPublic(account)
         except ObjectDoesNotExist:
             return Response({'detail':'profile not found'},
                              status=status.HTTP_200_OK)
         return Response({'data':serializer.data,
-                             'profile':request.user.nickname},
+                             'profile':profile_nickname},
                              status=status.HTTP_200_OK)
 
 class AccountPrivateView(APIView):
