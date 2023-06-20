@@ -34,6 +34,7 @@ class AccountRegister(APIView):
             else:
                 account.account_photo = file
                 account.save()
+            login(request, account)
             refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
             response = Response({'access_token':access_token,
                                  'nickname':account.nickname},
