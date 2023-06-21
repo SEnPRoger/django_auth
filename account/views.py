@@ -34,7 +34,17 @@ class AccountRegister(APIView):
             else:
                 account.account_photo = file
                 account.save()
-            login(request, account)
+
+            # Authenticate the user before logging in
+            user = authenticate(request, username=account.username, password=account.password)
+            if user is not None:
+                login(request, user)
+            else:
+                # Handle the case where authentication fails
+                # It could be due to incorrect credentials or other authentication backends
+                return Response({'error': 'Unable to authenticate user'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
             refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
             response = Response({'access_token':access_token,
                                  'nickname':account.nickname},
