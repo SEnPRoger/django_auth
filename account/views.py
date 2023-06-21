@@ -35,13 +35,10 @@ class AccountRegister(APIView):
                 account.account_photo = file
                 account.save()
 
-            # Authenticate the user before logging in
-            user = authenticate(request, username=account.nickname, password=account.password)
+            user = authenticate(request, username=account.nickname, password=request.data.get('password'))
             if user is not None:
                 login(request, user)
             else:
-                # Handle the case where authentication fails
-                # It could be due to incorrect credentials or other authentication backends
                 return Response({'error': 'Unable to authenticate user'},
                                 status=status.HTTP_400_BAD_REQUEST)
             
