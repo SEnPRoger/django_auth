@@ -8,8 +8,6 @@ from django.utils import timezone
 from rest_framework.exceptions import ParseError
 
 class AccountRegisterSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(style={'input_type':'password'}, write_only=True)
-
     class Meta:
         model = Account
         fields = ['username', 'nickname', 'email', 'birth_date', 'account_photo', 'password']
