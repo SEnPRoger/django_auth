@@ -36,7 +36,7 @@ class AccountRegister(APIView):
                 account.save()
 
             # Authenticate the user before logging in
-            user = authenticate(request, username=account.username, password=account.password)
+            user = authenticate(request, username=account.nickname, password=account.password)
             if user is not None:
                 login(request, user)
             else:
