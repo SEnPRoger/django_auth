@@ -16,9 +16,12 @@ import datetime, time
 from JWTAuth.views import JWTToken
 from account.models import Account
 from django.middleware import csrf
+from rest_framework.parsers import MultiPartParser
 
 # Create your views here.
 class AccountRegister(APIView):
+    parser_classes = [MultiPartParser]
+
     def post(self, request, format=None):
         serializer = AccountRegisterSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
