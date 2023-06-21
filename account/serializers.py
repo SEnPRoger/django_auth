@@ -12,18 +12,10 @@ class AccountRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'email', 'birth_date', 'account_photo', 'password', 'password2']
+        fields = ['username', 'nickname', 'email', 'birth_date', 'account_photo', 'password']
         extra_kwargs = {
             'password' : {'write_only':True}
         }
-    
-    def validate(self, attrs):
-        password = attrs.get('password')
-        password2 = attrs.get('password2')
-
-        if password != password2:
-            raise serializers.ValidationError('Both passwords should be equal')
-        return attrs
     
     def create(self, validated_data):
         account_photo = validated_data.pop('account_photo', None)
