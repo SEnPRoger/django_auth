@@ -22,7 +22,7 @@ class AccountRegisterSerializer(serializers.ModelSerializer):
         except ParseError:
             raise serializers.ValidationError('Invalid image file')
 
-        if account_photo:
+        if account_photo and account_photo != 'undefined':
             user.account_photo = account_photo
             user.save()
 
