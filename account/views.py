@@ -29,7 +29,7 @@ class AccountRegister(APIView):
             
             try:
                 file = request.data.get('account_photo')
-                if file is not None:
+                if file is not None and file != 'undefined':
                     extension = str(file).split('.')[1]
                 
                     if extension == 'gif' and request.user.is_moderator == False:
