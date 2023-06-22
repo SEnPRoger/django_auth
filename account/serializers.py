@@ -16,7 +16,9 @@ class AccountRegisterSerializer(serializers.ModelSerializer):
         }
     
     def create(self, validated_data):
+        print(validated_data.get('account_photo'))
         account_photo = validated_data.pop('account_photo', None)
+        print(validated_data.get('account_photo'))
         try:
             user = Account.objects.create_user(**validated_data)
         except ParseError:
