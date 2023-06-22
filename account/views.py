@@ -27,19 +27,16 @@ class AccountRegister(APIView):
         if serializer.is_valid(raise_exception=True):
             account = serializer.save()
             
-            try:
-                file = request.data.get('account_photo')
-                if file is not None and file != 'undefined':
-                    extension = str(file).split('.')[1]
+            file = request.FILES.get('account_photo')
+            if file is not None:
+                extension = str(file).split('.')[1]
                 
-                    if extension == 'gif' and request.user.is_moderator == False:
-                        return Response({'error':'you cannot upload gif as account photo'},
+                if extension == 'gif' and request.user.is_moderator == False:
+                    return Response({'error':'you cannot upload gif as account photo'},
                                         status=status.HTTP_403_FORBIDDEN)
-                    else:
-                        account.account_photo = file
-                        account.save()
-            except (IndexError, AttributeError):
-                pass
+                else:
+                    account.account_photo = file
+                    account.save()
 
             user = authenticate(request, username=account.nickname, password=request.data.get('password'))
             if user is not None:
