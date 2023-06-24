@@ -112,3 +112,25 @@ class AccountPrivateView(APIView):
         
         response['X-CSRFToken'] = csrf.get_token(request)
         return response
+    
+class CheckNicknameAvailable(APIView):
+    def get(self, request, nickname=None, format=None):
+        try:
+            account = Account.objects.get(nickname=nickname)
+            if account is not None:
+                response = Response({"result":"nickname is already occupied"}, status=status.HTTP_400_BAD_REQUEST)
+                return response
+        except ObjectDoesNotExist:
+            response = Response({"result":"nickname is free"}, status=status.HTTP_200_OK)
+            return response
+        
+class CheckEmailAvailable(APIView):
+    def get(self, request, email=None, format=None):
+        try:
+            account = Account.objects.get(email=email)
+            if account is not None:
+                response = Response({"result":"email is already occupied"}, status=status.HTTP_400_BAD_REQUEST)
+                return response
+        except ObjectDoesNotExist:
+            response = Response({"result":"email is free"}, status=status.HTTP_200_OK)
+            return response
