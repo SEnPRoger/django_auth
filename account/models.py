@@ -44,11 +44,17 @@ class AccountManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-def username_photo_path(instance, filename):
+def username_photo_path(instance, filename, object):
         # file will be uploaded to media/accounts/account.id/username.extension,
         #                     like media/accounts/1/SEnPRoger.jpg
         extension = filename.split('.')[1]
-        return 'accounts/{0}/{1}.{2}'.format(instance.id, instance.nickname, extension)
+        return 'accounts/{0}/{1}_photo.{2}'.format(instance.id, instance.nickname, extension)
+
+def username_banner_path(instance, filename, object):
+        # file will be uploaded to media/accounts/account.id/username.extension,
+        #                     like media/accounts/1/SEnPRoger.jpg
+        extension = filename.split('.')[1]
+        return 'accounts/{0}/{1}_banner.{2}'.format(instance.id, instance.nickname, extension)
 
 # Create your models here.
 class Account(AbstractBaseUser):
@@ -59,7 +65,7 @@ class Account(AbstractBaseUser):
     birth_date          = models.DateField(verbose_name='🥳 Birth date', blank=True, null=True)
     
     account_photo       = models.ImageField(verbose_name='🖼 Change account photo', upload_to=username_photo_path, blank=True, null=True)
-    account_banner      = models.ImageField(verbose_name='Change account banner', upload_to=username_photo_path, blank=True, null=True)
+    account_banner      = models.ImageField(verbose_name='Change account banner', upload_to=username_banner_path, blank=True, null=True)
     
     city                = models.CharField(verbose_name = '🏡 City', max_length=64, blank=True, null=True)
     country             = models.CharField(verbose_name = '🏙 Country', max_length=64, blank=True, null=True)

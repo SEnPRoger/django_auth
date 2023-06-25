@@ -134,3 +134,55 @@ class CheckEmailAvailable(APIView):
         except ObjectDoesNotExist:
             response = Response({"result":"email is free"}, status=status.HTTP_200_OK)
             return response
+        
+class AccountPhotoUpload(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AccountPhotoSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            file = request.FILES.get('photo')
+            extension = str(file).split('.')[1]
+            
+            if extension == 'gif' and request.user.is_moderator == False:
+                return Response({'detail':'you cannot upload gif as account photo'},
+                                status=status.HTTP_403_FORBIDDEN)
+            else:
+                account = Account.objects.get(id=request.user.id)
+                if account.account_photo != None:
+                    account.account_photo.delete()
+                account.account_photo = file
+                account.save()
+
+                return Response({'detail':'successfully uploaded photo'},
+                                    status=status.HTTP_200_OK)
+        else:
+            response = Response({'detail':serializer.errors},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
+        
+class AccountBannerUpload(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = AccountPhotoSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            file = request.FILES.get('photo')
+            extension = str(file).split('.')[1]
+            
+            if extension == 'gif' and request.user.is_moderator == False:
+                return Response({'detail':'you cannot upload gif as account banner'},
+                                status=status.HTTP_403_FORBIDDEN)
+            else:
+                account = Account.objects.get(id=request.user.id)
+                if account.account_banner != None:
+                    account.account_banner.delete()
+                account.account_banner = file
+                account.save()
+
+                return Response({'detail':'successfully uploaded banner'},
+                                    status=status.HTTP_200_OK)
+        else:
+            response = Response({'detail':serializer.errors},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
