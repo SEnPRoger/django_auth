@@ -44,13 +44,13 @@ class AccountManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-def username_photo_path(instance, filename, object):
+def username_photo_path(instance, filename):
         # file will be uploaded to media/accounts/account.id/username.extension,
         #                     like media/accounts/1/SEnPRoger.jpg
         extension = filename.split('.')[1]
         return 'accounts/{0}/{1}_photo.{2}'.format(instance.id, instance.nickname, extension)
 
-def username_banner_path(instance, filename, object):
+def username_banner_path(instance, filename):
         # file will be uploaded to media/accounts/account.id/username.extension,
         #                     like media/accounts/1/SEnPRoger.jpg
         extension = filename.split('.')[1]
