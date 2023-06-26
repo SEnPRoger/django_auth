@@ -14,9 +14,13 @@ from pathlib import Path
 from django.conf import settings
 import datetime, time
 from JWTAuth.views import JWTToken
-from account.models import Account
+from account.models import Account, VerificationCode
 from django.middleware import csrf
 from rest_framework.parsers import MultiPartParser
+from django.core.signing import Signer
+from django.core.mail import send_mail
+import base36
+import shortuuid
 
 # Create your views here.
 class AccountRegister(APIView):
@@ -185,4 +189,62 @@ class AccountBannerUpload(APIView):
         else:
             response = Response({'detail':serializer.errors},
                                 status=status.HTTP_400_BAD_REQUEST)
+            return response
+
+class AccountSendEmailCode(APIView):
+    def post(self, request):
+
+        # getting input unique data from new user
+        nickname = request.POST.get('nickname')
+        email = request.POST.get('email')
+
+        # signing a secret code using unique data
+        signer = Signer()
+        signed_data = signer.sign(str(nickname) + str(timezone.now()))
+        encoded_data = base36.dumps(int.from_bytes(signed_data.encode(), 'big'))
+        short_encoded_data = shortuuid.uuid(name=encoded_data)[:6]
+
+        # storing a planning nickname and create code date into db
+        verification_code = VerificationCode.objects.create(nickname=nickname, code=short_encoded_data)
+
+        # sending a email with secret code
+        send_mail(
+            'Verification code',
+            f'Your verification code is {short_encoded_data}',
+            'noreply@example.com',
+            [email],
+            fail_silently=False,
+        )
+        response = Response({'detail':'Verification code has been sent to email'},
+                                status=status.HTTP_200_OK)
+        return response
+
+class AccountConfirmEmail(APIView):
+    def post(self, request):
+
+        # getting a nickname and secret code for checking
+        nickname = request.POST.get('nickname')
+        code = request.POST.get('code')
+
+        # searching for requested new user by nickname
+        verification_code = VerificationCode.objects.filter(nickname=nickname).order_by('-created_date').first()
+
+        if verification_code is not None:
+
+            # and comparing with encoded data which was passed from email
+            if verification_code.code == code:
+                verification_code.delete()
+                response = Response({'detail':'Email has been verified'},
+                                    status=status.HTTP_200_OK)
+                return response
+            else:
+                # if user actually sent a request but typed a wrong code - delete record to generate a new one
+                if nickname == verification_code.nickname:
+                    verification_code.delete()
+                response = Response({'detail':'Invalid verification code'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                return response
+        else:
+            response = Response({'detail':'Requested user doesn`t sent any request to confirm email'},
+                                    status=status.HTTP_404_NOT_FOUND)
             return response

@@ -156,3 +156,8 @@ class Account(AbstractBaseUser):
         except:
             pass
         super().delete()
+
+class VerificationCode(models.Model):
+    nickname = models.CharField(blank=False, null=False)
+    code = models.CharField(blank=False, null=False)
+    created_date = models.DateTimeField(auto_now_add=True)
