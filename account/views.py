@@ -19,6 +19,8 @@ from django.middleware import csrf
 from rest_framework.parsers import MultiPartParser
 from django.core.signing import Signer
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 import base36
 import shortuuid
 
@@ -206,12 +208,17 @@ class AccountSendEmailCode(APIView):
         # storing a planning nickname and create code date into db
         verification_code = VerificationCode.objects.create(email=email, code=short_encoded_data)
 
+        context = {'verification_code': short_encoded_data}
+        html_message = render_to_string('verify_email.html', context)
+        plain_message = strip_tags(html_message)
+
         # sending a email with secret code
         send_mail(
             'Verification code',
-            f'Your verification code is {short_encoded_data}',
+            plain_message,
             'noreply@example.com',
             [email],
+            html_message=html_message,
             fail_silently=False,
         )
         response = Response({'detail':'Verification code has been sent to email'},
