@@ -229,8 +229,8 @@ class AccountConfirmEmail(APIView):
     def post(self, request):
 
         # getting a nickname and secret code for checking
-        email = request.POST.get('email')
-        code = request.POST.get('code')
+        email = request.data.get('email')
+        code = request.data.get('code')
 
         # searching for requested new user by nickname
         verification_code = VerificationCode.objects.filter(email=email).order_by('-created_date').first()
