@@ -197,7 +197,7 @@ class AccountSendEmailCode(APIView):
     def post(self, request):
 
         # getting input unique data from new user
-        email = request.POST.get('email')
+        email = request.data.get('email')
 
         # signing a secret code using unique data
         signer = Signer()

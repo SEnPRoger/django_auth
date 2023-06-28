@@ -99,7 +99,11 @@ DATABASES = {
     'PASSWORD': 'NjLIZQ4VChv9',
     'HOST': 'ep-patient-dust-682457.eu-central-1.aws.neon.tech',
     'PORT': '5432',
-  }
+  },
+  'local': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 }
 
 
