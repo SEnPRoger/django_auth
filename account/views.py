@@ -235,7 +235,7 @@ class AccountConfirmEmail(APIView):
         # searching for requested new user by nickname
 
         verification_codes = VerificationCode.objects.get(email=email)
-        current_code = verification_codes.latest('created_date')
+        current_code = verification_codes.order_by('-created_date').first()
 
         # verification_code = VerificationCode.objects.filter(email=email).order_by('-created_date').first()
 
