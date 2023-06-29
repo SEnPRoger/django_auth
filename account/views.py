@@ -241,8 +241,6 @@ class AccountConfirmEmail(APIView):
 
         verification_code = VerificationCode.objects.get(email=email)
 
-        # verification_code = VerificationCode.objects.filter(email=email).order_by('-created_date').first()
-
         if verification_code is not None:
 
             # and comparing with encoded data which was passed from email
@@ -252,9 +250,7 @@ class AccountConfirmEmail(APIView):
                                     status=status.HTTP_200_OK)
                 return response
             else:
-                # if user actually sent a request but typed a wrong code - delete record to generate a new one
-                if email == verification_code.email:
-                    verification_code.delete()
+                # if user actually sent a request but typed a wrong code
                 response = Response({'detail':'Invalid verification code'},
                                     status=status.HTTP_400_BAD_REQUEST)
                 return response
