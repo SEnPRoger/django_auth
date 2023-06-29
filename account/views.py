@@ -206,7 +206,12 @@ class AccountSendEmailCode(APIView):
         short_encoded_data = shortuuid.uuid(name=encoded_data)[:6]
 
         # storing a planning nickname and create code date into db
-        verification_code = VerificationCode.objects.create(email=email, code=short_encoded_data)
+        try:
+            old_code = VerificationCode.objects.get(email=email)
+            old_code.code = short_encoded_data
+            old_code.save()
+        except ObjectDoesNotExist:
+            new_code = VerificationCode.objects.create(email=email, code=short_encoded_data)
 
         context = {'verification_code': short_encoded_data}
         html_message = render_to_string('verify_email.html', context)
@@ -234,25 +239,22 @@ class AccountConfirmEmail(APIView):
 
         # searching for requested new user by nickname
 
-        verification_codes = VerificationCode.objects.get(email=email)
-        current_code = verification_codes.order_by('-created_date').first()
+        verification_code = VerificationCode.objects.get(email=email)
 
         # verification_code = VerificationCode.objects.filter(email=email).order_by('-created_date').first()
 
-        if verification_codes is not None:
+        if verification_code is not None:
 
             # and comparing with encoded data which was passed from email
-            if current_code.code == code:
-                for code in verification_codes:
-                    code.delete()
+            if verification_code.code == code:
+                verification_code.delete()
                 response = Response({'detail':'Email has been verified'},
                                     status=status.HTTP_200_OK)
                 return response
             else:
                 # if user actually sent a request but typed a wrong code - delete record to generate a new one
-                if email == current_code.email:
-                    for code in verification_codes:
-                        code.delete()
+                if email == verification_code.email:
+                    verification_code.delete()
                 response = Response({'detail':'Invalid verification code'},
                                     status=status.HTTP_400_BAD_REQUEST)
                 return response
