@@ -258,3 +258,22 @@ class AccountConfirmEmail(APIView):
             response = Response({'detail':'Requested user doesn`t sent any request to confirm email'},
                                     status=status.HTTP_404_NOT_FOUND)
             return response
+        
+class AccountUpdateInfo(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        serializer = AccountUpdateInfoSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            account = Account.objects.get(id=request.user.id)
+            for key, value in serializer.validated_data.items():
+                setattr(account, key, value)
+
+            account.save()
+            response = Response({'detail':'account has been updated'},
+                                status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail':'something went wrong'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response

@@ -69,7 +69,7 @@ class Account(AbstractBaseUser):
     
     city                = models.CharField(verbose_name = '🏡 City', max_length=64, blank=True, null=True)
     country             = models.CharField(verbose_name = '🏙 Country', max_length=64, blank=True, null=True)
-    links               = models.TextField(verbose_name = '🏙 Social links', blank=True, null=True)
+    biography           = models.TextField(verbose_name = '🏙 Biography', max_length=256, blank=True, null=True)
     changed_nickname    = models.DateTimeField(verbose_name='Changed nickname date', default=timezone.now, help_text='Nickname can be changed every 24 hours')
 
     #related_posts       = models.ManyToManyField('post.Post', blank=True, related_name='posts_set')

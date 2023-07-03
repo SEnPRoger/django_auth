@@ -52,7 +52,7 @@ class AccountGetPublic(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'links', 'subscribers_count']
+        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count']
 
 class AccountGetPrivate(serializers.ModelSerializer):
     class Meta:
@@ -61,3 +61,12 @@ class AccountGetPrivate(serializers.ModelSerializer):
 
 class AccountPhotoSerializer(serializers.Serializer):
     photo = serializers.ImageField()
+
+class AccountUpdateInfoSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False)
+    nickname = serializers.CharField(required=False)
+    email = serializers.CharField(required=False)
+    
+    class Meta:
+        model = Account
+        fields = ['username', 'nickname', 'email', 'birth_date', 'biography', 'city', 'country']
