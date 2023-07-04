@@ -14,7 +14,7 @@ from pathlib import Path
 from django.conf import settings
 import datetime, time
 from JWTAuth.views import JWTToken
-from account.models import Account, VerificationCode
+from account.models import *
 from django.middleware import csrf
 from rest_framework.parsers import MultiPartParser
 from django.core.signing import Signer
@@ -276,4 +276,18 @@ class AccountUpdateInfo(APIView):
         else:
             response = Response({'detail':'something went wrong'},
                                 status=status.HTTP_400_BAD_REQUEST)
+            return response
+        
+class AccountSendVerifyRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        if request.user.is_blocked != True:
+            verify_request = VerifiedAccount.objects.create(account=request.user)
+            response = Response({'detail':'verify request has been sent'},
+                                status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail':'you cannot send a verify request'},
+                                status=status.HTTP_200_OK)
             return response

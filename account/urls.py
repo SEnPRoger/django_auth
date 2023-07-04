@@ -10,6 +10,8 @@ urlpatterns = [
     path('send_email_code/', AccountSendEmailCode.as_view(), name='send_email_code'),
     path('confirm_email/', AccountConfirmEmail.as_view(), name='confirm_email'),
 
+    path('send_verify_request/', AccountSendVerifyRequest.as_view(), name='send_verify_request'),
+
     path('upload_photo/', AccountPhotoUpload.as_view(), name='upload_photo'),
     path('upload_banner/', AccountBannerUpload.as_view(), name='upload_banner'),
 

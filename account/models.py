@@ -161,3 +161,8 @@ class VerificationCode(models.Model):
     email = models.CharField(max_length=32, blank=False, null=True)
     code = models.CharField(max_length=32, blank=False, null=True)
     created_date = models.DateTimeField(auto_now_add=True)
+
+class VerifiedAccount(models.Model):
+    account = models.ForeignKey('account.Account', blank=False, null=False, on_delete=models.CASCADE)
+    is_verified = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True)
