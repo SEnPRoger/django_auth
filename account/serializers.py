@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from account.models import Account
+from account.models import Account, VerifiedAccount
 from django.core.exceptions import ValidationError
 from django.utils.encoding import smart_str, force_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -70,3 +70,8 @@ class AccountUpdateInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ['username', 'nickname', 'email', 'birth_date', 'biography', 'city', 'country']
+
+class AccountChangeVerifySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VerifiedAccount
+        fields = ['is_verified']

@@ -165,4 +165,4 @@ class VerificationCode(models.Model):
 class VerifiedAccount(models.Model):
     account = models.ForeignKey('account.Account', blank=False, null=False, on_delete=models.CASCADE)
     is_verified = models.BooleanField(default=False)
-    created_date = models.DateTimeField(auto_now_add=True)
+    changed_date = models.DateTimeField(default=timezone.now)
