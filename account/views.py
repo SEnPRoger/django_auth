@@ -304,9 +304,18 @@ class AccountChangeVerify(APIView):
 
                 if verify_status == True:
                     verify_request.is_verified = True
-                    verify_request.changed_date = datetime.datetime.now
+                    verify_request.changed_date = datetime.datetime.now()
+                    
+                    account = verify_request.account
+                    account.is_verify = True
+                    account.save()
+                    
                     verify_request.save()
                 else:
+                    account = verify_request.account
+                    account.is_verify = False
+                    account.save()
+
                     verify_request.delete()
 
                 response = Response({'detail':'verify account has been changed'},
