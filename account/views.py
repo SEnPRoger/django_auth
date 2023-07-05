@@ -325,3 +325,17 @@ class AccountChangeVerify(APIView):
                 response = Response({'detail':'you cannot change a verify account'},
                                     status=status.HTTP_400_BAD_REQUEST)
                 return response
+            
+class AccountGetVerify(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        if request.user.is_verify != False:
+            verify_request = VerifiedAccount.objects.get(account=request.user)
+            response = Response({'changed_date':verify_request.changed_date},
+                                status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail':'you don`t have verify status'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
