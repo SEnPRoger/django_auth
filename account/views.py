@@ -291,3 +291,25 @@ class AccountSendVerifyRequest(APIView):
             response = Response({'detail':'you cannot send a verify request'},
                                 status=status.HTTP_200_OK)
             return response
+        
+class AccountChangeVerify(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, id, format=None):
+        if request.user.is_moderator:
+            verify_status = request.data.get('verify')
+            verify_request = VerifiedAccount.objects.get(id=id)
+
+            if verify_status == True:
+                verify_request.is_verified = True
+                verify_request.save()
+            else:
+                verify_request.delete()
+
+            response = Response({'detail':'verify account has been changed'},
+                                status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail':'you cannot change a verify account'},
+                                status=status.HTTP_200_OK)
+            return response
