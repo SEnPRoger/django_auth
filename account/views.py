@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from account.serializers import *
 from django.contrib.auth import authenticate, login
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import FileUploadParser
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
@@ -23,6 +23,10 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import base36
 import shortuuid
+from django.contrib.postgres.search import TrigramSimilarity
+from rest_framework import generics
+from rest_framework.decorators import action, permission_classes
+from rest_framework.viewsets import ModelViewSet
 
 # Create your views here.
 class AccountRegister(APIView):
@@ -277,56 +281,125 @@ class AccountUpdateInfo(APIView):
             response = Response({'detail':'something went wrong'},
                                 status=status.HTTP_400_BAD_REQUEST)
             return response
-        
-class AccountSendVerifyRequest(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request, format=None):
-        if request.user.is_blocked != True:
-            verify_request = VerifiedAccount.objects.create(account=request.user)
-            response = Response({'detail':'verify request has been sent'},
+class AccountVerifyViewSet(ModelViewSet):
+    queryset = Account.objects.all()
+    serializer = AccountVerifySerializer
+
+    @action(methods=['get'], detail=True)
+    @permission_classes([AllowAny])
+    def get_request(self, request, request_id=None):
+        try:
+            verify_request = VerifiedAccount.objects.get(id=request_id)
+        except ObjectDoesNotExist:
+            response = Response({'detail':"does not exist"},
                                 status=status.HTTP_200_OK)
             return response
-        else:
-            response = Response({'detail':'you cannot send a verify request'},
-                                status=status.HTTP_400_BAD_REQUEST)
-            return response
-        
-class AccountChangeVerify(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, id, format=None):
-        serializer = AccountChangeVerifySerializer(data=request.data)
+        response = Response({'changed_date':verify_request.changed_date},
+                                status=status.HTTP_200_OK)
+        return response
+    
+    @action(methods=['post'], detail=False)
+    @permission_classes([IsAuthenticated])
+    def add_request(self, request):
+        serializer = AccountVerifySerializer(data=request.data, context={'request': request})
         if serializer.is_valid(raise_exception=True):
-            if request.user.is_moderator:
-                verify_status = serializer.validated_data.get('is_verified')
-                verify_request = VerifiedAccount.objects.get(id=id)
-
-                if verify_status == True:
-                    verify_request.is_verified = True
-                    verify_request.changed_date = datetime.datetime.now()
-                    
-                    account = verify_request.account
-                    account.is_verify = True
-                    account.save()
-                    
-                    verify_request.save()
-                else:
-                    account = verify_request.account
-                    account.is_verify = False
-                    account.save()
-
-                    verify_request.delete()
-
-                response = Response({'detail':'verify account has been changed'},
+            if request.user.is_blocked != True:
+                serializer.create_request()
+                response = Response({'detail':'verify request has been sent'},
                                     status=status.HTTP_200_OK)
                 return response
             else:
-                response = Response({'detail':'you cannot change a verify account'},
-                                    status=status.HTTP_400_BAD_REQUEST)
+                response = Response({'detail':'you cannot send a verify request'},
+                                status=status.HTTP_400_BAD_REQUEST)
                 return response
             
-class AccountGetVerify(APIView):
+    @action(methods=['post'], detail=True)
+    @permission_classes([IsAuthenticated])
+    def change_request(self, request, request_id=None):
+        serializer = AccountVerifySerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            try:
+                verify_request = VerifiedAccount.objects.get(id=request_id)
+            except ObjectDoesNotExist:
+                response = Response({'detail':'verify request not found'},
+                                        status=status.HTTP_200_OK)
+                return response
+        
+            account = verify_request.account
+            verify_status = serializer.validated_data.get('is_verified')
+
+            if request.user.is_moderator:
+                if verify_status == True:
+                    verify_request.is_verified = True
+                    verify_request.provided_by = request.user
+                    verify_request.changed_date = datetime.datetime.now()
+                    account.is_verify = True
+                    account.save()
+                    verify_request.save()
+                else:
+                    account.is_verify = False
+                    account.save()
+                    verify_request.delete()
+
+                response = Response({'detail':'verify request has been changed'},
+                                    status=status.HTTP_200_OK)
+                return response
+            else:
+                response = Response({'detail':'you cannot change a verify status'},
+                                status=status.HTTP_400_BAD_REQUEST)
+                return response
+
+# class AccountSendVerifyRequest(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, format=None):
+#         if request.user.is_blocked != True:
+#             verify_request = VerifiedAccount.objects.create(account=request.user)
+#             response = Response({'detail':'verify request has been sent'},
+#                                 status=status.HTTP_200_OK)
+#             return response
+#         else:
+#             response = Response({'detail':'you cannot send a verify request'},
+#                                 status=status.HTTP_400_BAD_REQUEST)
+#             return response
+        
+# class AccountChangeVerify(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, id, format=None):
+#         serializer = AccountChangeVerifySerializer(data=request.data)
+#         if serializer.is_valid(raise_exception=True):
+#             if request.user.is_moderator:
+#                 verify_status = serializer.validated_data.get('is_verified')
+#                 verify_request = VerifiedAccount.objects.get(id=id)
+
+#                 if verify_status == True:
+#                     verify_request.is_verified = True
+#                     verify_request.changed_date = datetime.datetime.now()
+                    
+#                     account = verify_request.account
+#                     account.is_verify = True
+#                     account.save()
+                    
+#                     verify_request.save()
+#                 else:
+#                     account = verify_request.account
+#                     account.is_verify = False
+#                     account.save()
+
+#                     verify_request.delete()
+
+#                 response = Response({'detail':'verify account has been changed'},
+#                                     status=status.HTTP_200_OK)
+#                 return response
+#             else:
+#                 response = Response({'detail':'you cannot change a verify account'},
+#                                     status=status.HTTP_400_BAD_REQUEST)
+#                 return response
+            
+# class AccountGetVerify(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
@@ -339,3 +412,25 @@ class AccountGetVerify(APIView):
             response = Response({'detail':'you don`t have verify status'},
                                 status=status.HTTP_400_BAD_REQUEST)
             return response
+        
+class AccountGetAnother(APIView):
+    def get(self, request, nickname=None, format=None):
+        try:
+            account = Account.objects.get(nickname=nickname)
+            serializer = AccountGetPublic(account)
+        except ObjectDoesNotExist:
+            similar_records = self.find_similar_nickname(nickname)
+            if similar_records.count() != 0:
+                serializer = AccountGetPublic(similar_records, many=True)
+                return Response({'similar_accounts': serializer.data},
+                                status=status.HTTP_200_OK)
+            else:
+                return Response({'detail': 'account doesn`t exist'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'data': serializer.data},
+                        status=status.HTTP_200_OK)
+    
+    def find_similar_nickname(self, nickname):
+        similarity_value = 0.3 # if value a < 0.3 < b, where a - closer to input data, where b - more wide range of search
+        similar_nicknames = Account.objects.annotate(similarity=TrigramSimilarity('nickname', nickname)).filter(similarity__gt=similarity_value).order_by('-similarity')
+        return similar_nicknames

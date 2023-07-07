@@ -71,7 +71,21 @@ class AccountUpdateInfoSerializer(serializers.ModelSerializer):
         model = Account
         fields = ['username', 'nickname', 'email', 'birth_date', 'biography', 'city', 'country']
 
-class AccountChangeVerifySerializer(serializers.ModelSerializer):
+class AccountVerifySerializer(serializers.ModelSerializer):
     class Meta:
         model = VerifiedAccount
-        fields = ['is_verified']
+        fields = ['is_verified', 'provided_by']
+
+    def create_request(self):
+        request = self.context['request']
+        return VerifiedAccount.objects.create(account=request.user)
+
+    def update_request(self, instance, validated_data):
+        instance.is_verified = validated_data.get("is_verified")
+        instance.save()
+
+    def delete_request(self, instance):
+        account = Account.objects.get(nickname=instance.account.nickname)
+        account.is_verify = False
+        account.save()
+        instance.delete()
