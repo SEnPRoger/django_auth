@@ -331,21 +331,25 @@ class AccountVerifyViewSet(ModelViewSet):
             verify_status = serializer.validated_data.get('is_verified')
 
             if request.user.is_moderator:
-                if verify_status == True:
-                    verify_request.is_verified = True
-                    verify_request.provided_by = request.user
-                    verify_request.changed_date = datetime.datetime.now()
-                    account.is_verify = True
-                    account.save()
-                    verify_request.save()
-                else:
-                    account.is_verify = False
-                    account.save()
-                    verify_request.delete()
-
-                response = Response({'detail':'verify request has been changed'},
+                if verify_request.account != request.user:
+                    if verify_status == True:
+                        verify_request.is_verified = True
+                        verify_request.provided_by = request.user
+                        verify_request.changed_date = datetime.datetime.now()
+                        account.is_verify = True
+                        account.save()
+                        verify_request.save()
+                    else:
+                        account.is_verify = False
+                        account.save()
+                        verify_request.delete()
+                    response = Response({'detail':'verify request has been changed'},
                                     status=status.HTTP_200_OK)
-                return response
+                    return response
+                else:
+                    response = Response({'detail':'you cannot change your own request'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                    return response
             else:
                 response = Response({'detail':'you cannot change a verify status'},
                                 status=status.HTTP_400_BAD_REQUEST)
