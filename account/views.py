@@ -105,7 +105,12 @@ class AccountView(APIView):
                 profile_nickname = request.user.nickname
             else:
                 profile_nickname = None
-            serializer = AccountGetPublic(account)
+
+            # if authenticated user is a owner of searching account - give him a private info about his account
+            if request.user.is_authenticated and request.user.nickname == nickname:
+                serializer = AccountGetPrivate(account)
+            else:
+                serializer = AccountGetPublic(account)
 
         except ObjectDoesNotExist:
             similar_records = self.find_similar_nickname(nickname)
@@ -117,24 +122,17 @@ class AccountView(APIView):
             else:
                 return Response({'detail': 'account doesn`t exist'},
                             status=status.HTTP_404_NOT_FOUND)
-        return Response({'data':serializer.data,
+            
+        response = Response({'data':serializer.data,
                              'profile':profile_nickname},
                              status=status.HTTP_200_OK)
+        response['X-CSRFToken'] = csrf.get_token(request)
+        return response
     
     def find_similar_nickname(self, nickname):
         similarity_value = 0.3 # if value a < 0.3 < b, where a - closer to input data, where b - more wide range of search
         similar_nicknames = Account.objects.annotate(similarity=TrigramSimilarity('nickname', nickname)).filter(similarity__gt=similarity_value).order_by('-similarity')
         return similar_nicknames
-
-class AccountPrivateView(APIView):
-    permission_classes = [IsAuthenticated]
-    def get(self, request, format=None):
-        serializer = AccountGetPrivate(request.user)
-        response = Response({'data':serializer.data},
-                            status=status.HTTP_200_OK)
-        
-        response['X-CSRFToken'] = csrf.get_token(request)
-        return response
     
 class CheckNicknameAvailable(APIView):
     def get(self, request, nickname=None, format=None):

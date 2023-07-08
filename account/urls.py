@@ -20,7 +20,6 @@ urlpatterns = [
 
     path('update_public_info/', AccountUpdateInfo.as_view(), name='update_public_info'),
 
-    path('private/', AccountPrivateView.as_view(), name='private_view'),
     path('<str:nickname>/', AccountView.as_view(), name='view'),
 
     path('check_nickname/<str:nickname>/', CheckNicknameAvailable.as_view(), name='check_nickname'),

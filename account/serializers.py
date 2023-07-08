@@ -62,7 +62,7 @@ class AccountGetPublic(serializers.ModelSerializer):
 class AccountGetPrivate(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ['nickname', 'birth_date', 'city', 'country', 'email']
+        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'email', 'changed_nickname']
 
 class AccountPhotoSerializer(serializers.Serializer):
     photo = serializers.ImageField()
