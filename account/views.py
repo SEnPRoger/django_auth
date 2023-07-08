@@ -111,7 +111,7 @@ class AccountView(APIView):
             similar_records = self.find_similar_nickname(nickname)
 
             if similar_records.count() != 0:
-                serializer = AccountGetPublic(similar_records, many=True)
+                serializer = AccountSimilar(similar_records, many=True)
                 return Response({'similar_accounts': serializer.data},
                                 status=status.HTTP_204_NO_CONTENT)
             else:

@@ -35,6 +35,11 @@ class AccountLoginSerializer(serializers.ModelSerializer):
         model = Account
         fields = ['nickname_or_email', 'password']
 
+class AccountSimilar(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['nickname', 'is_verify']
+
 class AccountGetPublic(serializers.ModelSerializer):
 
     subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
