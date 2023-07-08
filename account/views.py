@@ -113,7 +113,7 @@ class AccountView(APIView):
             if similar_records.count() != 0:
                 serializer = AccountSimilar(similar_records, many=True)
                 return Response({'similar_accounts': serializer.data},
-                                status=status.HTTP_204_NO_CONTENT)
+                                status=status.HTTP_200_OK)
             else:
                 return Response({'detail': 'account doesn`t exist'},
                             status=status.HTTP_404_NOT_FOUND)
