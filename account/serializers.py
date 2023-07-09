@@ -76,10 +76,12 @@ class AccountUpdateInfoSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False)
     nickname = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
+    account_photo = serializers.ImageField(required=False)
+    account_banner = serializers.ImageField(required=False)
     
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'email', 'birth_date', 'biography', 'city', 'country']
+        fields = ['username', 'nickname', 'account_photo', 'account_banner', 'email', 'birth_date', 'biography', 'city', 'country']
 
 class AccountVerifySerializer(serializers.ModelSerializer):
     class Meta:

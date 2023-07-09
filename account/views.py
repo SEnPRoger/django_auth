@@ -281,10 +281,31 @@ class AccountEdit(APIView):
         serializer = AccountUpdateInfoSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             account = Account.objects.get(id=request.user.id)
+            
+            keys_to_exclude = ['account_photo', 'account_banner']
             for key, value in serializer.validated_data.items():
-                setattr(account, key, value)
-
+                if key not in keys_to_exclude:
+                    setattr(account, key, value)
             account.save()
+
+            photo = request.FILES.get('account_photo')
+            banner = request.FILES.get('account_banner')
+            extension = str(photo).split('.')[1]
+            extension2 = str(banner).split('.')[1]
+            
+            if extension == 'gif' and request.user.is_moderator == False or extension2 == 'gif' and request.user.is_moderator:
+                return Response({'detail':'you cannot upload gif as account photo'},
+                                status=status.HTTP_403_FORBIDDEN)
+            else:
+                account = Account.objects.get(id=request.user.id)
+                if account.account_photo != None:
+                    account.account_photo.delete()
+                account.account_photo = photo
+                if account.account_banner != None:
+                    account.account_banner.delete()
+                account.account_banner = banner
+                account.save()
+
             response = Response({'detail':'account has been updated'},
                                 status=status.HTTP_200_OK)
             return response
