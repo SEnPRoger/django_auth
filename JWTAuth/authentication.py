@@ -28,7 +28,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
         if header is None:
             return None
 
-        raw_refresh_token = JWTToken.get_refresh_token(request, header_name='refresh_token')
+        raw_refresh_token = JWTToken.get_refresh_token(request, header_name='refresh-token')
         raw_access_token = JWTToken.get_access_token(request)
 
         if raw_access_token is None or raw_refresh_token is None:
