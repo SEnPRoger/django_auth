@@ -274,7 +274,7 @@ class AccountConfirmEmail(APIView):
                                     status=status.HTTP_404_NOT_FOUND)
             return response
         
-class AccountUpdateInfo(APIView):
+class AccountEdit(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
@@ -291,6 +291,77 @@ class AccountUpdateInfo(APIView):
         else:
             response = Response({'detail':'something went wrong'},
                                 status=status.HTTP_400_BAD_REQUEST)
+            return response
+
+class AccountBlockedListViewSet(ModelViewSet):
+    queryset = Account.objects.all()
+    serializer = AccountBlockedSerializer
+
+    @action(methods=['get'], detail=False)
+    @permission_classes([IsAuthenticated])
+    def get_blocked_accounts(self, request):
+        blocked_accounts = request.user.blocked_accounts.all()
+
+        if blocked_accounts.count() > 0:
+            serializer = AccountBlockedSerializer(blocked_accounts, many=True, context={'request': request})
+            response = Response({'amount':blocked_accounts.count(),
+                                 'blocked_accounts': serializer.data},
+                                status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail': 'account does not have any blocked accounts'},
+                                status=status.HTTP_200_OK)
+            return response
+    
+    @action(methods=['post'], detail=True)
+    @permission_classes([IsAuthenticated])
+    def add_blocked_account(self, request, nickname=None):
+        try:
+            account_to_block = Account.objects.get(nickname=nickname)
+        except ObjectDoesNotExist:
+            response = Response({'detail':"account does not exist"},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
+        
+        request.user.blocked_accounts.add(account_to_block)
+        response = Response({'detail':'account was added to blocked list'},
+                                status=status.HTTP_200_OK)
+        return response
+    
+    @action(methods=['post'], detail=True)
+    @permission_classes([IsAuthenticated])
+    def remove_blocked_account(self, request, nickname=None):
+        try:
+            account_to_block = Account.objects.get(nickname=nickname)
+        except ObjectDoesNotExist:
+            response = Response({'detail':"account does not exist"},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
+        
+        request.user.blocked_accounts.remove(account_to_block)
+        response = Response({'detail':'account was removed from blocked list'},
+                                status=status.HTTP_200_OK)
+        return response
+
+class AccountDelete(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, nickname, format=None):
+        try:
+            account = Account.objects.get(nickname=request.user.nickname)
+        except ObjectDoesNotExist:
+            response = Response({'detail':"account does not exist"},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return response
+        
+        if request.user.nickname == account.nickname or request.user.is_moderator:
+            account.delete()
+            response = Response({'detail':'account was deleted'},
+                                    status=status.HTTP_200_OK)
+            return response
+        else:
+            response = Response({'detail':'you cannot delete account'},
+                                    status=status.HTTP_403_FORBIDDEN)
             return response
 
 class AccountVerifyViewSet(ModelViewSet):
@@ -365,65 +436,3 @@ class AccountVerifyViewSet(ModelViewSet):
                 response = Response({'detail':'you cannot change a verify status'},
                                 status=status.HTTP_400_BAD_REQUEST)
                 return response
-
-# class AccountSendVerifyRequest(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, format=None):
-#         if request.user.is_blocked != True:
-#             verify_request = VerifiedAccount.objects.create(account=request.user)
-#             response = Response({'detail':'verify request has been sent'},
-#                                 status=status.HTTP_200_OK)
-#             return response
-#         else:
-#             response = Response({'detail':'you cannot send a verify request'},
-#                                 status=status.HTTP_400_BAD_REQUEST)
-#             return response
-        
-# class AccountChangeVerify(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, id, format=None):
-#         serializer = AccountChangeVerifySerializer(data=request.data)
-#         if serializer.is_valid(raise_exception=True):
-#             if request.user.is_moderator:
-#                 verify_status = serializer.validated_data.get('is_verified')
-#                 verify_request = VerifiedAccount.objects.get(id=id)
-
-#                 if verify_status == True:
-#                     verify_request.is_verified = True
-#                     verify_request.changed_date = datetime.datetime.now()
-                    
-#                     account = verify_request.account
-#                     account.is_verify = True
-#                     account.save()
-                    
-#                     verify_request.save()
-#                 else:
-#                     account = verify_request.account
-#                     account.is_verify = False
-#                     account.save()
-
-#                     verify_request.delete()
-
-#                 response = Response({'detail':'verify account has been changed'},
-#                                     status=status.HTTP_200_OK)
-#                 return response
-#             else:
-#                 response = Response({'detail':'you cannot change a verify account'},
-#                                     status=status.HTTP_400_BAD_REQUEST)
-#                 return response
-            
-# class AccountGetVerify(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, format=None):
-        if request.user.is_verify != False:
-            verify_request = VerifiedAccount.objects.get(account=request.user)
-            response = Response({'changed_date':verify_request.changed_date},
-                                status=status.HTTP_200_OK)
-            return response
-        else:
-            response = Response({'detail':'you don`t have verify status'},
-                                status=status.HTTP_400_BAD_REQUEST)
-            return response

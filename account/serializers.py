@@ -60,6 +60,11 @@ class AccountGetPublic(serializers.ModelSerializer):
         fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count']
 
 class AccountGetPrivate(serializers.ModelSerializer):
+    subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
+
+    def get_subscribers_count(self, account):
+        return account.subscribers.count()
+    
     class Meta:
         model = Account
         fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'email', 'changed_nickname']
@@ -94,3 +99,8 @@ class AccountVerifySerializer(serializers.ModelSerializer):
         account.is_verify = False
         account.save()
         instance.delete()
+
+class AccountBlockedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['nickname', 'account_photo']
