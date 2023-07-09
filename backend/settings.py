@@ -169,6 +169,9 @@ AUTH_USER_MODEL = 'account.Account'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('JWTAuth.authentication.JWTAuthentication',),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
 }
 
 JWTAUTH = {
