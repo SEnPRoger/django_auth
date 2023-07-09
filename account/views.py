@@ -290,10 +290,10 @@ class AccountEdit(APIView):
 
             photo = request.FILES.get('account_photo')
             banner = request.FILES.get('account_banner')
-            extension = str(photo).split('.')[1]
-            extension2 = str(banner).split('.')[1]
+            photo_extension = str(photo).split('.')[-1] if photo else None
+            banner_extension = str(banner).split('.')[-1] if banner else None
             
-            if extension == 'gif' and request.user.is_moderator == False or extension2 == 'gif' and request.user.is_moderator:
+            if (photo_extension and photo_extension == 'gif' and not request.user.is_moderator) or (banner_extension and banner_extension == 'gif' and request.user.is_moderator):
                 return Response({'detail':'you cannot upload gif as account photo'},
                                 status=status.HTTP_403_FORBIDDEN)
             else:
