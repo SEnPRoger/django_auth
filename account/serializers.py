@@ -90,7 +90,8 @@ class AccountVerifySerializer(serializers.ModelSerializer):
 
     def create_request(self):
         request = self.context['request']
-        return VerifiedAccount.objects.create(account=request.user, provided_by=None)
+        social = request.data.get('social_link')
+        return VerifiedAccount.objects.create(account=request.user, social_link=social, provided_by=None)
 
     def update_request(self, instance, validated_data):
         instance.is_verified = validated_data.get("is_verified")
