@@ -86,7 +86,7 @@ class AccountUpdateInfoSerializer(serializers.ModelSerializer):
 class AccountVerifySerializer(serializers.ModelSerializer):
     class Meta:
         model = VerifiedAccount
-        fields = ['is_verified', 'provided_by']
+        fields = ['is_verified', 'provided_by', 'social_link']
 
     def create_request(self):
         request = self.context['request']

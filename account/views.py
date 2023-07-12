@@ -27,6 +27,9 @@ from django.contrib.postgres.search import TrigramSimilarity
 from rest_framework import generics
 from rest_framework.decorators import action, permission_classes
 from rest_framework.viewsets import ModelViewSet
+from django.db.models import Prefetch
+import hashlib
+from django.contrib.auth import update_session_auth_hash
 
 # Create your views here.
 class AccountRegister(APIView):
@@ -297,7 +300,6 @@ class AccountEdit(APIView):
                 return Response({'detail':'you cannot upload gif as account photo'},
                                 status=status.HTTP_403_FORBIDDEN)
             else:
-                account = Account.objects.get(id=request.user.id)
                 if account.account_photo != None:
                     account.account_photo.delete()
                 account.account_photo = photo
@@ -321,12 +323,14 @@ class AccountBlockedListViewSet(ModelViewSet):
     @action(methods=['get'], detail=False)
     @permission_classes([IsAuthenticated])
     def get_blocked_accounts(self, request):
-        blocked_accounts = request.user.blocked_accounts.all()
+        blocked_accounts = request.user.blocked_accounts.all().prefetch_related(
+            Prefetch('blocked_accounts_set', queryset=Account.objects.only('username', 'nickname', 'account_photo'))
+            ).values('blocked_accounts_set__username', 'blocked_accounts_set__nickname', 'blocked_accounts_set__account_photo')
+        blocked_amount = blocked_accounts.count()
 
-        if blocked_accounts.count() > 0:
-            serializer = AccountBlockedSerializer(blocked_accounts, many=True, context={'request': request})
-            response = Response({'amount':blocked_accounts.count(),
-                                 'blocked_accounts': serializer.data},
+        if blocked_amount > 0:
+            response = Response({'amount':blocked_amount,
+                                 'blocked_accounts': blocked_accounts},
                                 status=status.HTTP_200_OK)
             return response
         else:
@@ -353,13 +357,13 @@ class AccountBlockedListViewSet(ModelViewSet):
     @permission_classes([IsAuthenticated])
     def remove_blocked_account(self, request, nickname=None):
         try:
-            account_to_block = Account.objects.get(nickname=nickname)
+            account_to_unblock = Account.objects.get(nickname=nickname)
         except ObjectDoesNotExist:
             response = Response({'detail':"account does not exist"},
                                 status=status.HTTP_400_BAD_REQUEST)
             return response
         
-        request.user.blocked_accounts.remove(account_to_block)
+        request.user.blocked_accounts.remove(account_to_unblock)
         response = Response({'detail':'account was removed from blocked list'},
                                 status=status.HTTP_200_OK)
         return response
@@ -393,12 +397,12 @@ class AccountVerifyViewSet(ModelViewSet):
     @permission_classes([AllowAny])
     def get_request(self, request, request_id=None):
         try:
-            verify_request = VerifiedAccount.objects.get(id=request_id)
+            verify_date = VerifiedAccount.objects.values('changed_date').get(id=request_id)
         except ObjectDoesNotExist:
             response = Response({'detail':"does not exist"},
                                 status=status.HTTP_200_OK)
             return response
-        response = Response({'changed_date':verify_request.changed_date},
+        response = Response({'changed_date':verify_date},
                                 status=status.HTTP_200_OK)
         return response
     
