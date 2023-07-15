@@ -31,7 +31,7 @@ class PostViewSet(ModelViewSet):
     @action(methods=['get'], detail=True)
     @permission_classes([AllowAny])
     def get_posts_by_author(self, request, nickname=None, format=None):
-        posts = Post.objects.filter(author__nickname=nickname)
+        posts = Post.objects.filter(author__nickname=nickname).order_by('-published_date')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
         
