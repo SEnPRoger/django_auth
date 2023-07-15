@@ -42,9 +42,7 @@ class PostViewSet(ModelViewSet):
             photos = []
             for photo in post['photos']:
                 file_url = photo['file']
-            if file_url:
-                file_url = request.build_absolute_uri(file_url)
-            photos.append({'file': file_url})
+                photos.append(file_url)
 
             reply = post['reply']
             reply_data = None
@@ -52,7 +50,23 @@ class PostViewSet(ModelViewSet):
                 # Handle the case where 'reply' is an integer (post ID)
                 reply_post = Post.objects.get(id=reply)
                 reply_serializer = PostSerializer(reply_post, context={'request': request})
-                reply_data = reply_serializer.data
+
+                photos = []
+                for photo in reply_serializer.data['photos']:
+                    file_url = photo['file']
+                    photos.append(file_url)
+
+                reply_data = {
+                    'id': reply_serializer.data['id'],
+                    'content': reply_serializer.data['content'],
+                    'author_username': reply_serializer.data['author_username'],
+                    'author_nickname': reply_serializer.data['author_nickname'],
+                    'author_account_photo': reply_serializer.data['author_account_photo'],
+                    'published_date': reply_serializer.data['published_date'],
+                    'is_edited': reply_serializer.data['is_edited'],
+                    'device': reply_serializer.data['device'],
+                    'photos': photos
+                }
             elif reply:
                 # Handle the case where 'reply' is a nested object
                 reply_data = {
@@ -91,9 +105,7 @@ class PostViewSet(ModelViewSet):
         photos = []
         for photo in serializer.data['photos']:
             file_url = photo['file']
-            if file_url:
-                file_url = request.build_absolute_uri(file_url)
-            photos.append({'file': file_url})
+            photos.append(file_url)
 
         reply = []
         if post.reply is not None:
