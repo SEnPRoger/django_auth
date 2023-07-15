@@ -5,6 +5,7 @@ class Post(models.Model):
     content         = models.CharField(verbose_name='Вміст посту', blank=False, max_length=600)
     author          = models.ForeignKey('account.Account', verbose_name='Автор публікації',
                                          related_name='author_set', on_delete=models.DO_NOTHING)
+    photos = models.ManyToManyField('photo.Photo', verbose_name='Фотографії', blank=True)
     published_date  = models.DateTimeField(verbose_name='Дата публікації', auto_now_add=True)
     is_edited = models.BooleanField(verbose_name='Пост було редаговано', default=False)
 

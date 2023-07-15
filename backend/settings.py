@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     'account',
     'post',
+    'photo',
     'JWTAuth',
     'django_user_agents',
 ]

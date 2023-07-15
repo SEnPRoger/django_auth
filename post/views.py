@@ -23,8 +23,29 @@ class AddPost(APIView):
         
     permission_classes = [AllowAny]
     def get(self, request, post_id=None):
-        post = get_object_or_404(Post, id=post_id)
+        post = get_object_or_404(Post.objects.prefetch_related('reply'), id=post_id)
         serializer = PostSerializer(post, context={'request': request})
+
+        photos = []
+        for photo in serializer.data['photos']:
+            file_url = photo['file']
+            if file_url:
+                file_url = request.build_absolute_uri(file_url)
+            photos.append({'file': file_url})
+
+        reply = []
+        if post.reply is not None:
+            reply_serializer = PostSerializer(post.reply, context={'request': request})
+            reply.append({
+                'content': reply_serializer.data['content'],
+                'author_username': reply_serializer.data['author_username'],
+                'author_nickname': reply_serializer.data['author_nickname'],
+                'author_account_photo': reply_serializer.data['author_account_photo'],
+                'published_date': reply_serializer.data['published_date'],
+                'is_edited': reply_serializer.data['is_edited'],
+                'device': reply_serializer.data['device'],
+                'post_id': post.reply.id,
+            })
 
         response_data = {
             'content': serializer.data['content'],
@@ -34,7 +55,8 @@ class AddPost(APIView):
             'published_date': serializer.data['published_date'],
             'is_edited': serializer.data['is_edited'],
             'device': serializer.data['device'],
-            'reply': serializer.data['reply'],
+            'photos': photos,
+            'reply': reply,
         }
 
         response = Response({'detail': response_data},
