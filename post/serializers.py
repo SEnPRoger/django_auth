@@ -12,6 +12,7 @@ class PostSerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source='author.nickname', read_only=True)
     author_account_photo = serializers.ImageField(source='author.account_photo', read_only=True)
     author_username = serializers.CharField(source='author.username', read_only=True)
+    author_is_verify = serializers.CharField(source='author.is_verify', read_only=True)
     device = serializers.CharField(read_only=True)
     published_date = serializers.DateTimeField(read_only=True)
     photos = PhotoSerializer(many=True, required=False)
@@ -21,6 +22,7 @@ class PostSerializer(serializers.ModelSerializer):
     reply_author_username = serializers.CharField(source='reply.author.username', read_only=True)
     reply_author_nickname = serializers.CharField(source='reply.author.nickname', read_only=True)
     reply_author_account_photo = serializers.ImageField(source='reply.author.account_photo', read_only=True)
+    reply_author_is_verify = serializers.CharField(source='reply.author.is_verify', read_only=True)
     reply_published_date = serializers.DateTimeField(source='reply.published_date', read_only=True)
 
     id = serializers.IntegerField(required=False, read_only=True)
@@ -28,8 +30,8 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['id', 'content', 'is_edited', 'reply', 'reply_id', 'reply_content', 'reply_author_username', 'reply_author_nickname',
-                  'reply_author_account_photo', 'reply_published_date', 'author_username', 'author_nickname',
-                    'author_account_photo', 'device', 'published_date', 'photos']
+                  'reply_author_account_photo', 'reply_author_is_verify', 'reply_published_date', 'author_username', 'author_nickname',
+                    'author_account_photo', 'author_is_verify', 'device', 'published_date', 'photos']
 
     def get_device(self):
         request = self.context.get('request')
