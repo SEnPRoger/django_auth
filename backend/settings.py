@@ -42,10 +42,13 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'account',
+    'post',
     'JWTAuth',
+    'django_user_agents',
 ]
 
 MIDDLEWARE = [
+    'django_user_agents.middleware.UserAgentMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
