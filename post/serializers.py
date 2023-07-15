@@ -23,9 +23,11 @@ class PostSerializer(serializers.ModelSerializer):
     reply_author_account_photo = serializers.ImageField(source='reply.author.account_photo', read_only=True)
     reply_published_date = serializers.DateTimeField(source='reply.published_date', read_only=True)
 
+    id = serializers.IntegerField(required=False, read_only=True)
+
     class Meta:
         model = Post
-        fields = ['content', 'is_edited', 'reply', 'reply_id', 'reply_content', 'reply_author_username', 'reply_author_nickname',
+        fields = ['id', 'content', 'is_edited', 'reply', 'reply_id', 'reply_content', 'reply_author_username', 'reply_author_nickname',
                   'reply_author_account_photo', 'reply_published_date', 'author_username', 'author_nickname',
                     'author_account_photo', 'device', 'published_date', 'photos']
 
@@ -41,7 +43,7 @@ class PostSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context['request']
         id_to_reply = None
-        
+
         try:
             id_to_reply = validated_data.pop('reply_id')
         except KeyError:

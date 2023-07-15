@@ -5,11 +5,18 @@ from post.serializers import *
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import get_object_or_404
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action, permission_classes
+from django.db.models import Prefetch
 
 # Create your views here.
-class AddPost(APIView):
-    permission_classes = [IsAuthenticated]
-    def post(self, request, format=None):
+class PostViewSet(ModelViewSet):
+    queryset = Post.objects.all()
+    serializer = PostSerializer
+
+    @action(methods=['post'], detail=False)
+    @permission_classes([IsAuthenticated])
+    def add_post(self, request, format=None):
         serializer = PostSerializer(data=request.data, context={'request': request})
         if serializer.is_valid(raise_exception=True):
             post = serializer.save(author=request.user)
@@ -21,8 +28,16 @@ class AddPost(APIView):
                          'error':serializer.errors},
                         status=status.HTTP_200_OK)
         
-    permission_classes = [AllowAny]
-    def get(self, request, post_id=None):
+    @action(methods=['get'], detail=True)
+    @permission_classes([AllowAny])
+    def get_posts_by_author(self, request, nickname=None, format=None):
+        posts = Post.objects.filter(author__nickname=nickname)
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    @action(methods=['get'], detail=True)
+    @permission_classes([AllowAny])
+    def get_post_by_id(self, request, post_id=None):
         post = get_object_or_404(Post.objects.prefetch_related('reply'), id=post_id)
         serializer = PostSerializer(post, context={'request': request})
 
@@ -59,6 +74,5 @@ class AddPost(APIView):
             'reply': reply,
         }
 
-        response = Response({'detail': response_data},
-                            status=status.HTTP_200_OK)
+        response = Response(response_data, status=status.HTTP_200_OK)
         return response
