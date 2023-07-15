@@ -63,7 +63,7 @@ class PostSerializer(serializers.ModelSerializer):
         post.author = request.user
         post.device = self.get_device()
 
-        for uploaded_file in request.FILES.getlist('photos'):
+        for uploaded_file in request.FILES.getlist('photos[]'):
             photo = Photo.objects.create(file=uploaded_file, author=request.user)
             post.photos.add(photo)
 
