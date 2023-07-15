@@ -12,7 +12,7 @@ class PostSerializer(serializers.ModelSerializer):
     author_nickname = serializers.CharField(source='author.nickname', read_only=True)
     author_account_photo = serializers.ImageField(source='author.account_photo', read_only=True)
     author_username = serializers.CharField(source='author.username', read_only=True)
-    author_is_verify = serializers.CharField(source='author.is_verify', read_only=True)
+    author_is_verify = serializers.BooleanField(source='author.is_verify', read_only=True)
     device = serializers.CharField(read_only=True)
     published_date = serializers.DateTimeField(read_only=True)
     photos = PhotoSerializer(many=True, required=False)
@@ -22,7 +22,7 @@ class PostSerializer(serializers.ModelSerializer):
     reply_author_username = serializers.CharField(source='reply.author.username', read_only=True)
     reply_author_nickname = serializers.CharField(source='reply.author.nickname', read_only=True)
     reply_author_account_photo = serializers.ImageField(source='reply.author.account_photo', read_only=True)
-    reply_author_is_verify = serializers.CharField(source='reply.author.is_verify', read_only=True)
+    reply_author_is_verify = serializers.BooleanField(source='reply.author.is_verify', read_only=True)
     reply_published_date = serializers.DateTimeField(source='reply.published_date', read_only=True)
 
     id = serializers.IntegerField(required=False, read_only=True)
