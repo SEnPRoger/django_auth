@@ -3,6 +3,9 @@ from django.utils import timezone
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 import shutil
 from pathlib import Path
+from post.models import Post
+from photo.models import Photo
+from django.utils.functional import cached_property
 
 class AccountManager(BaseUserManager):
     def create_user(self, username, nickname, email, birth_date=None, account_photo=None, password=None):
@@ -72,7 +75,7 @@ class Account(AbstractBaseUser):
     biography           = models.TextField(verbose_name = '🏙 Biography', max_length=256, blank=True, null=True)
     changed_nickname    = models.DateTimeField(verbose_name='Changed nickname date', default=timezone.now, help_text='Nickname can be changed every 24 hours')
 
-    #related_posts       = models.ManyToManyField('post.Post', blank=True, related_name='posts_set')
+    related_posts       = models.ManyToManyField('post.Post', blank=True, related_name='posts_set')
     blocked_accounts    = models.ManyToManyField("self", verbose_name = 'Blocked accounts', blank=True, null=True, related_name='blocked_accounts_set', 
                                                     symmetrical=False)
     subscribers         = models.ManyToManyField("self", blank=True, null=True, related_name='subscribers_set', 
@@ -131,9 +134,11 @@ class Account(AbstractBaseUser):
         if self.account_banner:
             return self.account_banner.url
 
+    @cached_property
     def get_subcribers_count(self):
         return self.subscribers.count()
     
+    @cached_property
     def get_posts_count(self):
         return self.related_posts.count()
 

@@ -43,21 +43,17 @@ class AccountSimilar(serializers.ModelSerializer):
 class AccountGetPublic(serializers.ModelSerializer):
 
     subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
-    # posts_count = serializers.SerializerMethodField('get_posts_count')
-    # photos_count = serializers.SerializerMethodField('get_photos_count')
+    posts_count = serializers.SerializerMethodField('get_posts_count')
 
     def get_subscribers_count(self, account):
-        return account.subscribers.count()
+        return account.get_subcribers_count
     
-    # def get_posts_count(self, account):
-    #     return account.related_posts.count()
-    
-    # def get_photos_count(self, account):
-    #     return Photo.objects.filter(author=account).count()
+    def get_posts_count(self, account):
+        return account.get_posts_count
 
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count']
+        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'posts_count']
 
 class AccountGetPrivate(serializers.ModelSerializer):
     subscribers_count = serializers.SerializerMethodField('get_subscribers_count')

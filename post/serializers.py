@@ -17,6 +17,7 @@ class PostSerializer(serializers.ModelSerializer):
     published_date = serializers.DateTimeField(read_only=True)
     photos = PhotoSerializer(many=True, required=False)
     reply_id = serializers.IntegerField(required=False)
+    slug = serializers.SlugField(read_only=True)
 
     reply_content = serializers.CharField(source='reply.content', read_only=True)
     reply_author_username = serializers.CharField(source='reply.author.username', read_only=True)
@@ -29,7 +30,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'content', 'is_edited', 'reply', 'reply_id', 'reply_content', 'reply_author_username', 'reply_author_nickname',
+        fields = ['id', 'slug', 'content', 'is_edited', 'reply', 'reply_id', 'reply_content', 'reply_author_username', 'reply_author_nickname',
                   'reply_author_account_photo', 'reply_author_is_verify', 'reply_published_date', 'author_username', 'author_nickname',
                     'author_account_photo', 'author_is_verify', 'device', 'published_date', 'photos']
 
@@ -64,6 +65,8 @@ class PostSerializer(serializers.ModelSerializer):
 
         post.author = request.user
         post.device = self.get_device()
+
+        post.author.related_posts.add(post)
 
         for uploaded_file in request.FILES.getlist('photos[]'):
             photo = Photo.objects.create(file=uploaded_file, author=request.user)

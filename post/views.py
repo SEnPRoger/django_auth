@@ -66,7 +66,8 @@ class PostViewSet(ModelViewSet):
                     'published_date': reply_serializer.data['published_date'],
                     'is_edited': reply_serializer.data['is_edited'],
                     'device': reply_serializer.data['device'],
-                    'photos': photos
+                    'photos': photos,
+                    'slug': reply_serializer.data['slug'],
                 }
             elif reply:
                 # Handle the case where 'reply' is a nested object
@@ -80,6 +81,7 @@ class PostViewSet(ModelViewSet):
                     'published_date': reply['published_date'],
                     'is_edited': reply['is_edited'],
                     'device': reply['device'],
+                    'slug': reply['slug'],
                 }
 
             post_data = {
@@ -94,6 +96,7 @@ class PostViewSet(ModelViewSet):
                 'device': post['device'],
                 'photos': photos,
                 'reply': reply_data,
+                'slug': post['slug'],
             }
             post_obj.append(post_data)
 
@@ -101,8 +104,8 @@ class PostViewSet(ModelViewSet):
         
     @action(methods=['get'], detail=True)
     @permission_classes([AllowAny])
-    def get_post_by_id(self, request, post_id=None):
-        post = get_object_or_404(Post.objects.prefetch_related('reply'), id=post_id)
+    def get_post_by_slug(self, request, post_slug=None):
+        post = get_object_or_404(Post.objects.prefetch_related('reply'), slug=post_slug)
         serializer = PostSerializer(post, context={'request': request})
 
         photos = []
@@ -123,6 +126,7 @@ class PostViewSet(ModelViewSet):
                 'is_edited': reply_serializer.data['is_edited'],
                 'device': reply_serializer.data['device'],
                 'post_id': post.reply.id,
+                'slug': reply_serializer.data['slug'],
             })
 
         response_data = {
@@ -135,6 +139,7 @@ class PostViewSet(ModelViewSet):
             'device': serializer.data['device'],
             'photos': photos,
             'reply': reply,
+            'slug': serializer.data['slug']
         }
 
         response = Response(response_data, status=status.HTTP_200_OK)
