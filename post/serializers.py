@@ -94,5 +94,6 @@ class PostGetSerializer(serializers.ModelSerializer):
     
     def get_photos(self, obj):
         photos = obj.photos.all()
-        photo_serializer = PhotoSerializer(photos, many=True, read_only=True)
-        return photo_serializer.data
+        #photo_serializer = PhotoSerializer(photos, many=True, read_only=True)
+        photo_files = [photo.file.url for photo in photos]
+        return photo_files
