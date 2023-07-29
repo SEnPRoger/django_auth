@@ -31,7 +31,9 @@ class PostListView(ListAPIView):
     def get_queryset(self):
         id = self.kwargs.get(self.kwarg_nickname)
         
-        queryset = Post.objects.filter(Q(author__pk=id) & Q(is_pinned=True)).order_by('-published_date')
+        #queryset = Post.objects.filter(Q(author__pk=id) & Q(is_pinned=True)).order_by('-published_date')
+        #queryset = Post.objects.filter(author__pk=id).order_by('-published_date')
+        queryset = Post.objects.filter(Q(author__pk=id) & (Q(is_pinned=True) | Q(is_pinned=False))).order_by('-published_date')
 
         queryset = queryset.annotate(
             likes_count=Count('post_likes'),
@@ -56,6 +58,17 @@ class PostListView(ListAPIView):
         )
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
 class PostRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
