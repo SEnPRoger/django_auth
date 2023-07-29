@@ -25,11 +25,17 @@ import base36
 import shortuuid
 from django.contrib.postgres.search import TrigramSimilarity
 from rest_framework import generics
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action, permission_classes
 from rest_framework.viewsets import ModelViewSet
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Case, When, Value, IntegerField, BooleanField, F, Q
 import hashlib
 from django.contrib.auth import update_session_auth_hash
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.generics import UpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from post.models import Post
+from post.serializers import PostGetSerializer
+from comment.models import Comment
 
 # Create your views here.
 class AccountRegister(APIView):
@@ -94,11 +100,187 @@ class AccountLogin(APIView):
         else:
             return Response({'error':serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
+
+class AccountRetrieveUpdate(RetrieveUpdateDestroyAPIView):
+    queryset = Account.objects.all()
+    lookup_field = 'nickname'
+
+    def get(self, request, *args, **kwargs):
+        permission_classes = self.get_permissions()
+
+        nickname = kwargs.get(self.lookup_field)
+
+        # Аннотируем поле is_subscribed, проверяем, подписан ли текущий пользователь на аккаунт
+        queryset = Account.objects.annotate(posts_count=Count('posts')).annotate(subscribers_count=Count('subscribers', distinct=True)).get(nickname=nickname)
+
+        if request.user.is_authenticated:
+            if queryset.filter(blocked_accounts__id=request.user.id).exists():
+                return Response(
+                    {'detail': 'you have been blocked by the owner of the account'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            queryset = queryset.annotate(
+                    is_subscribed=Case(
+                        When(subscribers__nickname=request.user.nickname, then=Value(True)),
+                        default=Value(False),
+                        output_field=BooleanField()
+                    )
+                ).annotate(
+                        subscribed_on_me=Case(
+                            When(subscriptions__nickname=request.user.nickname, then=Value(True)),
+                            default=Value(False),
+                            output_field=BooleanField()
+                        ),
+                        is_blocked_by_me=Case(
+                            When(blocked_accounts__nickname=nickname, then=Value(True)),
+                            default=Value(False),
+                            output_field=BooleanField()
+                        ),
+            )
+            curr_nickname = request.user.nickname
+        else:
+            curr_nickname = 'not auth'
+
+        if self.request.user.is_authenticated and self.request.user.nickname == nickname:
+            serializer = AccountGetPrivate(queryset, context={'request': request})
+        else:
+            serializer = AccountGetPublic(queryset, context={'request': request})
+        return Response({'data': serializer.data, 'profile': curr_nickname},
+                          status=status.HTTP_200_OK)
+    
+    def put(self, *args, **kwargs):
+        permission_classes = self.get_permissions()
+        account = self.request.user
+        if account or self.request.user.is_moderator:
+            serializer = AccountUpdateInfoSerializer(account, data=self.request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'detail':'account has been edited'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail':'you dont have a permission to edit account'}, status=status.HTTP_200_OK)
         
+    def delete(self, *args, **kwargs):
+        account = self.get_object()
+        if self.request.user.nickname == self.kwargs.get('nickname') or self.request.user.is_moderator:
+            account.delete()
+            return Response({'detail':'account has been deleted'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail':'you dont have a permission to delete account'}, status=status.HTTP_200_OK)
+    
+    def get_permissions(self):
+        permissions = []
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE' or self.request.method == 'POST':
+            permissions += [IsAuthenticated()]
+        elif self.request.method == 'GET':
+            permissions += [AllowAny()]
+        return permissions
+
+class AccountListPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'count'
+    max_page_size = 10
+
+class AccountListSubscriptions(ListAPIView):
+    queryset = Account.objects.all()
+    lookup_field = 'nickname'
+    permission_classes = [AllowAny]
+    serializer_class = AccountListSerializer
+    pagination_class = AccountListPagination
+
+    def list(self, *args, **kwargs):
+        account = self.get_object()
+        queryset = self.filter_queryset(account.subscriptions_set.all().order_by('created_at'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response([])
+    
+class AccountListSubscribers(ListAPIView):
+    queryset = Account.objects.all()
+    lookup_field = 'nickname'
+    permission_classes = [AllowAny]
+    serializer_class = AccountListSerializer
+    pagination_class = AccountListPagination
+
+    def list(self, *args, **kwargs):
+        account = self.get_object()
+        queryset = self.filter_queryset(account.subscribers_set.all().order_by('created_at'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response([])
+
+class AccountSubscriptions(UpdateAPIView):
+    queryset = Account.objects.all()
+    lookup_field = 'nickname'
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        account_to_follow = self.get_object()
+        if not request.user.subscriptions.filter(pk=account_to_follow.pk).exists():
+            request.user.subscriptions.add(account_to_follow)
+            account_to_follow.subscribers.add(request.user)
+            request.user.save()
+            account_to_follow.save()
+            return Response({'detail':'successfuly added account to subscriptions'},
+                        status=status.HTTP_200_OK)
+        else:
+            request.user.subscriptions.remove(account_to_follow)
+            account_to_follow.subscribers.remove(request.user)
+            request.user.save()
+            account_to_follow.save()
+            return Response({'detail':'successfuly deleted account from subscriptions'},
+                        status=status.HTTP_200_OK)
+
+class AccountFeed(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = AccountListPagination
+    serializer_class = PostGetSerializer
+
+    def get_queryset(self):
+        subscriptions = self.request.user.subscriptions.all()
+        posts = Post.objects.filter(author__in=subscriptions).order_by('-published_date')
+        posts = posts.annotate(
+            likes_count=Count('post_likes'),
+            comments_count=Count('comments')
+        )
+
+        if self.request.user.is_authenticated:
+            posts = posts.annotate(
+                is_liked_by_user=Case(
+                    When(post_likes__account=self.request.user, then=Value(True)),
+                    default=Value(False),
+                    output_field=BooleanField()
+                )
+            )
+
+        # Оптимизация связанных таблиц photos и comments с помощью select_related и Prefetch
+        posts = posts.select_related('author').prefetch_related(
+            Prefetch('photos', queryset=Photo.objects.select_related('author'))
+        ).prefetch_related(
+            Prefetch('comments', queryset=Comment.objects.select_related('author'))
+        )
+        return posts
+
+    def list(self, request):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response([])
+
 class AccountView(APIView):
     def get(self, request, nickname=None, format=None):
         try:
-            account = Account.objects.get(nickname=nickname)
+            #? prefetch_related('posts', 'subscribers') добавляет доп. секунды к загрузке
+            account = Account.objects.select_related().get(nickname=nickname)
             if request.user.is_authenticated:
                 if account.blocked_accounts.filter(id=request.user.id).exists():
                     return Response(
@@ -107,7 +289,7 @@ class AccountView(APIView):
                     )
                 profile_nickname = request.user.nickname
             else:
-                profile_nickname = None
+                profile_nickname = 'not auth'
 
             # if authenticated user is a owner of searching account - give him a private info about his account
             if request.user.is_authenticated and request.user.nickname == nickname:
@@ -118,7 +300,7 @@ class AccountView(APIView):
         except ObjectDoesNotExist:
             similar_records = self.find_similar_nickname(nickname)
 
-            if similar_records.count() != 0:
+            if similar_records.exists():
                 serializer = AccountSimilar(similar_records, many=True)
                 return Response({'similar_accounts': serializer.data},
                                 status=status.HTTP_200_OK)
@@ -316,27 +498,27 @@ class AccountEdit(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
             return response
 
+class AccountBlockedList(ListAPIView):
+    serializer_class = AccountBlockedSerializer
+    pagination_class = AccountListPagination
+
+    def get_object(self):
+        account = get_object_or_404(Account, nickname=self.request.user.nickname)
+        return account
+
+    def list(self, *args, **kwargs):
+        account = self.get_object()
+        queryset = self.filter_queryset(account.blocked_accounts.all().order_by('created_at'))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        return Response([])
+
 class AccountBlockedListViewSet(ModelViewSet):
     queryset = Account.objects.all()
     serializer = AccountBlockedSerializer
-
-    @action(methods=['get'], detail=False)
-    @permission_classes([IsAuthenticated])
-    def get_blocked_accounts(self, request):
-        blocked_accounts = request.user.blocked_accounts.all().prefetch_related(
-            Prefetch('blocked_accounts_set', queryset=Account.objects.only('username', 'nickname', 'account_photo'))
-            ).values('blocked_accounts_set__username', 'blocked_accounts_set__nickname', 'blocked_accounts_set__account_photo')
-        blocked_amount = blocked_accounts.count()
-
-        if blocked_amount > 0:
-            response = Response({'amount':blocked_amount,
-                                 'blocked_accounts': blocked_accounts},
-                                status=status.HTTP_200_OK)
-            return response
-        else:
-            response = Response({'detail': 'account does not have any blocked accounts'},
-                                status=status.HTTP_200_OK)
-            return response
     
     @action(methods=['post'], detail=True)
     @permission_classes([IsAuthenticated])
@@ -348,6 +530,7 @@ class AccountBlockedListViewSet(ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST)
             return response
         
+        print(account_to_block.email)
         request.user.blocked_accounts.add(account_to_block)
         response = Response({'detail':'account was added to blocked list'},
                                 status=status.HTTP_200_OK)
@@ -367,27 +550,6 @@ class AccountBlockedListViewSet(ModelViewSet):
         response = Response({'detail':'account was removed from blocked list'},
                                 status=status.HTTP_200_OK)
         return response
-
-class AccountDelete(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, nickname, format=None):
-        try:
-            account = Account.objects.get(nickname=request.user.nickname)
-        except ObjectDoesNotExist:
-            response = Response({'detail':"account does not exist"},
-                                status=status.HTTP_400_BAD_REQUEST)
-            return response
-        
-        if request.user.nickname == account.nickname or request.user.is_moderator:
-            account.delete()
-            response = Response({'detail':'account was deleted'},
-                                    status=status.HTTP_200_OK)
-            return response
-        else:
-            response = Response({'detail':'you cannot delete account'},
-                                    status=status.HTTP_403_FORBIDDEN)
-            return response
 
 class AccountVerifyViewSet(ModelViewSet):
     queryset = Account.objects.all()

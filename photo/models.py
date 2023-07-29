@@ -1,4 +1,5 @@
 from django.db import models
+from post.models import Post
 
 def upload_photo_path(instance, filename):
         extension = filename.split('.')[1]
@@ -7,6 +8,7 @@ def upload_photo_path(instance, filename):
 # Create your models here.
 class Photo(models.Model):
     file = models.ImageField(upload_to=upload_photo_path, blank=False, null=False)
+    post = models.ForeignKey('post.Post', blank=False, null=True, related_name='photos', on_delete=models.CASCADE)
     author = models.ForeignKey('account.Account', verbose_name='Автор фотографії', blank=False, null=False,
                                 on_delete=models.CASCADE)
     upload_date = models.DateTimeField(verbose_name='Дата завантаження', blank=False, null=False, auto_now_add=True)

@@ -6,6 +6,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils import timezone
 from rest_framework.exceptions import ParseError
+from django.db.models import Count
 
 class AccountRegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,30 +41,39 @@ class AccountSimilar(serializers.ModelSerializer):
         model = Account
         fields = ['nickname', 'is_verify']
 
+class AccountSubscriptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['account_photo']
+
+class AccountListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['username', 'nickname', 'account_photo', 'is_verify']
+
 class AccountGetPublic(serializers.ModelSerializer):
 
-    subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
-    posts_count = serializers.SerializerMethodField('get_posts_count')
+    posts_count = serializers.IntegerField(read_only=True)
+    subscribers_count = serializers.IntegerField(read_only=True)
 
-    def get_subscribers_count(self, account):
-        return account.get_subcribers_count
-    
-    def get_posts_count(self, account):
-        return account.get_posts_count
+    is_subscribed = serializers.BooleanField(read_only=True)
+    subscribed_on_me = serializers.BooleanField(read_only=True)
+    is_blocked_by_me = serializers.BooleanField(read_only=True)
+
+    subscriptions = AccountSubscriptionsSerializer(source='subscriptions_set', many=True)
 
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'posts_count']
+        fields = ['id', 'username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'posts_count', 'subscriptions', 'is_subscribed', 'subscribed_on_me', 'is_blocked_by_me']
 
 class AccountGetPrivate(serializers.ModelSerializer):
-    subscribers_count = serializers.SerializerMethodField('get_subscribers_count')
-
-    def get_subscribers_count(self, account):
-        return account.subscribers.count()
     
+    posts_count = serializers.IntegerField(read_only=True)
+    subscribers_count = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Account
-        fields = ['username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'subscribers_count', 'email', 'changed_nickname']
+        fields = ['id', 'username', 'nickname', 'birth_date', 'created_at', 'is_verify', 'is_blocked', 'account_photo', 'account_banner', 'city', 'country', 'biography', 'email', 'changed_nickname', 'subscribers_count', 'posts_count']
 
 class AccountPhotoSerializer(serializers.Serializer):
     photo = serializers.ImageField()
