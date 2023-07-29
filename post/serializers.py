@@ -47,7 +47,7 @@ class PostUpdateSerializer(serializers.ModelSerializer):
         post.device = self.get_device()
         post.save()
 
-        for uploaded_file in request.FILES.getlist('photos'):  # Заменить на photos[] при работе с клиентом
+        for uploaded_file in request.FILES.getlist('photos[]'):  # Заменить на photos[] при работе с клиентом
             photo = Photo.objects.create(post=post, file=uploaded_file, author=request.user)
             photo.save()
 
