@@ -112,8 +112,19 @@ class AccountRetrieveUpdate(RetrieveUpdateDestroyAPIView):
 
         nickname = kwargs.get(self.lookup_field)
 
-        # Аннотируем поле is_subscribed, проверяем, подписан ли текущий пользователь на аккаунт
-        queryset = Account.objects.annotate(posts_count=Count('posts')).annotate(subscribers_count=Count('subscribers', distinct=True)).get(nickname=nickname)
+        try:
+            # Аннотируем поле is_subscribed, проверяем, подписан ли текущий пользователь на аккаунт
+            queryset = Account.objects.annotate(posts_count=Count('posts')).annotate(subscribers_count=Count('subscribers', distinct=True)).get(nickname=nickname)
+        except ObjectDoesNotExist:
+            similar_records = self.find_similar_nickname(nickname)
+
+            if similar_records.exists():
+                serializer = AccountSimilar(similar_records, many=True)
+                return Response({'similar_accounts': serializer.data},
+                                status=status.HTTP_200_OK)
+            else:
+                return Response({'detail': 'account doesn`t exist'},
+                            status=status.HTTP_404_NOT_FOUND)
 
         if request.user.is_authenticated:
             if queryset.filter(blocked_accounts__id=request.user.id).exists():
@@ -177,6 +188,11 @@ class AccountRetrieveUpdate(RetrieveUpdateDestroyAPIView):
         elif self.request.method == 'GET':
             permissions += [AllowAny()]
         return permissions
+    
+    def find_similar_nickname(self, nickname):
+        similarity_value = 0.3 # if value a < 0.3 < b, where a - closer to input data, where b - more wide range of search
+        similar_nicknames = Account.objects.annotate(similarity=TrigramSimilarity('nickname', nickname)).filter(similarity__gt=similarity_value).order_by('-similarity')
+        return similar_nicknames
 
 class AccountListPagination(PageNumberPagination):
     page_size = 5
