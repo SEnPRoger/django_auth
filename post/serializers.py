@@ -28,7 +28,7 @@ class PostUpdateSerializer(serializers.ModelSerializer):
             return 'unknown'
 
     def create(self, validated_data, request):
-        print("1:" + str(len(request.FILES.getlist('photos[]'))))
+        print("(1) amount of recieved photos:" + str(len(request.FILES.getlist('photos[]'))))
         id_to_reply = None
 
         try:
@@ -46,13 +46,15 @@ class PostUpdateSerializer(serializers.ModelSerializer):
             post.reply = reply
 
         post.device = self.get_device()
+        post.save()
 
-        print("2:" + str(len(request.FILES.getlist('photos[]'))))
-        for uploaded_file in request.FILES.getlist('photos[]'):  # Заменить на photos[] при работе с клиентом
+        print("(2) amount of recieved photos:" + str(len(request.FILES.getlist('photos[]'))))
+
+        # Заменить на 'photos[]' при работе с хостингом или на 'photos' для локального тестирования
+        for uploaded_file in request.FILES.getlist('photos[]'):
             photo = Photo.objects.create(post=post, file=uploaded_file, author=request.user)
             photo.save()
 
-        post.save()
         return post
 
     def update(self, instance):
