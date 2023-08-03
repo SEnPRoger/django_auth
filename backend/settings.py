@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'like',
     'comment',
     'view',
+    'voting',
+
     'JWTAuth',
     'django_user_agents',
 ]
