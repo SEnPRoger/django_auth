@@ -30,17 +30,21 @@ class CommentUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
+        id_to_reply = None
+        reply = None
 
         content = validated_data.get('content')
-        post_id = validated_data.pop('post_id')
-        id_to_reply = validated_data.pop('reply_id')
         
+        post_id = validated_data.pop('post_id')
         post = Post.objects.get(id=post_id)
-        try:
-            reply = Comment.objects.get(id=id_to_reply)
-        except ObjectDoesNotExist:
-            pass
-
+        
+        id_to_reply = validated_data.pop('reply_id')
+        if id_to_reply is not None:
+            try:
+                reply = Comment.objects.get(id=id_to_reply)
+            except ObjectDoesNotExist:
+                pass
+        
         device = self.get_device()
 
         comment = Comment(content=content, device=device, post=post, reply=reply, author=request.user)
