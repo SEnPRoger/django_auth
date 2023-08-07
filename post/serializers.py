@@ -84,7 +84,7 @@ class PostGetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['content', 'author_id', 'author_nickname', 'author_account_photo', 'author_username', 'author_is_verify',
+        fields = ['id', 'content', 'author_id', 'author_nickname', 'author_account_photo', 'author_username', 'author_is_verify',
                   'device', 'is_edited', 'published_date', 'slug', 'photos', 'is_liked', 'likes_count', 'comments_count',
                   'views_count', 'is_pinned']
         prefetch_related = ['photos']
