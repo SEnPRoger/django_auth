@@ -12,7 +12,7 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class CommentUpdateSerializer(serializers.ModelSerializer):
     post_id = serializers.IntegerField()
-    reply_id = serializers.IntegerField()
+    reply_id = serializers.IntegerField(required=False)
     device = serializers.CharField(read_only=True)
 
     class Meta:
@@ -36,7 +36,10 @@ class CommentUpdateSerializer(serializers.ModelSerializer):
         id_to_reply = validated_data.pop('reply_id')
         
         post = Post.objects.get(id=post_id)
-        reply = Comment.objects.get(id=id_to_reply)
+        try:
+            reply = Comment.objects.get(id=id_to_reply)
+        except ObjectDoesNotExist:
+            pass
 
         device = self.get_device()
 
