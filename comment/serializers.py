@@ -30,7 +30,6 @@ class CommentUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        id_to_reply = None
         reply = None
 
         content = validated_data.get('content')
@@ -38,7 +37,7 @@ class CommentUpdateSerializer(serializers.ModelSerializer):
         post_id = validated_data.pop('post_id')
         post = Post.objects.get(id=post_id)
         
-        id_to_reply = validated_data.pop('reply_id')
+        id_to_reply = validated_data.pop('reply_id', None)
         if id_to_reply is not None:
             try:
                 reply = Comment.objects.get(id=id_to_reply)
