@@ -112,7 +112,10 @@ class PostRetrieveUpdateDestroy(RetrieveUpdateDestroyAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        post = serializer.create(validated_data=serializer.validated_data, request=request)
+        try:
+            post = serializer.create(validated_data=serializer.validated_data, request=request)
+        except ValueError:
+            return Response({'detail':'voting title and choices must be filled'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'detail': 'post has been added'}, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
