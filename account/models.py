@@ -166,3 +166,7 @@ class VerifiedAccount(models.Model):
     changed_date = models.DateTimeField(default=timezone.now)
     social_link = models.TextField(blank=True, null=True)
     provided_by = models.ForeignKey('account.Account', related_name='provided_by', blank=True, null=True, on_delete=models.CASCADE)
+
+class Token(models.Model):
+    account = models.ForeignKey('account.Account', blank=False, null=False, on_delete=models.CASCADE)
+    uuid = models.UUIDField()

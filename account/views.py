@@ -65,6 +65,10 @@ class AccountRegister(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
             
             refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
+
+            uuid = JWTToken.get_uuid(refresh_token)
+            token = Token.objects.create(account=account, uuid=uuid)
+
             response = Response({'access_token':access_token,
                                  'nickname':account.nickname,
                                  'id':account.id},
@@ -89,6 +93,10 @@ class AccountLogin(APIView):
             if account is not None:
                 login(request, account)
                 refresh_token, access_token = JWTToken.generate_tokens(user_id=account.id)
+
+                uuid = JWTToken.get_uuid(refresh_token)
+                token = Token.objects.create(account=account, uuid=uuid)
+
                 response = Response({'access_token':access_token,
                                      'nickname':account.nickname,
                                      'id':account.id},
@@ -193,6 +201,15 @@ class AccountRetrieveUpdate(RetrieveUpdateDestroyAPIView):
         similarity_value = 0.3 # if value a < 0.3 < b, where a - closer to input data, where b - more wide range of search
         similar_nicknames = Account.objects.annotate(similarity=TrigramSimilarity('nickname', nickname)).filter(similarity__gt=similarity_value).order_by('-similarity')
         return similar_nicknames
+
+class AccountLogout(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = JWTToken.get_refresh_token(request, header_name='refresh-token')
+        uuid = JWTToken.get_uuid(refresh_token)
+        token = Token.objects.get(uuid=uuid)
+        token.delete()
 
 class AccountListPagination(PageNumberPagination):
     page_size = 5

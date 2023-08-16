@@ -182,8 +182,8 @@ REST_FRAMEWORK = {
 }
 
 JWTAUTH = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=3),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
 
     'USER_ID_CLAIM':'user_id',
     'USER_ID_FIELD': 'id',

@@ -8,7 +8,7 @@ from django.conf import settings
 import jwt
 
 settings = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=3),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
 
     'USER_ID_CLAIM':'user_id',

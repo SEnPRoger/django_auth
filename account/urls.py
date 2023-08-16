@@ -4,7 +4,6 @@ from rest_framework import routers
 
 app_name = "account"
 
-
 urlpatterns = [
     path('register/', AccountRegister.as_view(), name='register'),
     path('login/', AccountLogin.as_view(), name='login'),
@@ -35,5 +34,6 @@ urlpatterns = [
     path('check_nickname/<str:nickname>/', CheckNicknameAvailable.as_view(), name='check_nickname'),
     path('check_email/<str:email>/', CheckEmailAvailable.as_view(), name='check_email'),
 
+    path('logout/', AccountLogout.as_view(), name='logout'),
     path('delete/<str:nickname>/', AccountRetrieveUpdate.as_view(), name='delete'),
 ]

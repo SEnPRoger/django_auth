@@ -1,32 +1,50 @@
 import jwt, time, datetime
 from django.utils import timezone
 from .authentication import settings
+import uuid
 
 class JWTToken():
     """
     Class for working with JWT tokens
     """
     @staticmethod
-    def GenerateToken(user_id, type, lifetime):
+    def GenerateToken(user_id, type, lifetime, nickname):
         """
+        Description:
         Generating token and encode information to JWT token
+        Here we are getting nickname for
 
         Arguments:
-            user_id (id from database), type (access or refresh), lifetime (period of active)
+            user_id (id from database), type (access or refresh), lifetime (period of active), nickname
 
         Returns:
             token
         """
         token_lifetime = datetime.datetime.now(tz=timezone.utc) + lifetime
-        token = jwt.encode({"user_id": user_id,
-                                "type": type,
-                                "exp": token_lifetime,
-                                "time": str(JWTToken.datetime_from_utc_to_local(token_lifetime))},
-                                "sdfsdfsdf", algorithm="HS256")
+        if type == 'refresh':
+            token = jwt.encode({"user_id": user_id,
+                                    "type": type,
+                                    "exp": token_lifetime,
+                                    "nickname": nickname,
+                                    "uuid": uuid.uuid4,
+                                    "time": str(JWTToken.datetime_from_utc_to_local(token_lifetime))},
+                                    "sdfsdfsdf", algorithm="HS256")
+        else:
+            token = jwt.encode({"user_id": user_id,
+                                        "type": type,
+                                        "exp": token_lifetime,
+                                        "time": str(JWTToken.datetime_from_utc_to_local(token_lifetime))},
+                                        "sdfsdfsdf", algorithm="HS256")
+            
         return token
 
     @staticmethod
-    def generate_tokens(user_id):
+    def get_uuid(token):
+        decoded_token = jwt.decode(token, 'sdfsdfsdf', algorithms="HS256")
+        return decoded_token['uuid']
+
+    @staticmethod
+    def generate_tokens(user_id, nickname):
         """
         Generating refresh and access tokens (JWT encoding)
 
@@ -36,7 +54,7 @@ class JWTToken():
         Returns:
             refresh_token, access_token
         """
-        return JWTToken.GenerateToken(user_id, 'refresh', settings.get('REFRESH_TOKEN_LIFETIME')), JWTToken.GenerateToken(user_id, 'access', settings.get('ACCESS_TOKEN_LIFETIME'))
+        return JWTToken.GenerateToken(user_id, 'refresh', settings.get('REFRESH_TOKEN_LIFETIME'), nickname), JWTToken.GenerateToken(user_id, 'access', settings.get('ACCESS_TOKEN_LIFETIME'), nickname)
     
     @staticmethod
     def get_refresh_token(request, header_name):
@@ -126,6 +144,21 @@ class JWTToken():
         decoded_token = jwt.decode(token, 'sdfsdfsdf', algorithms="HS256")
         return decoded_token['user_id']
     
+    @staticmethod
+    def get_nickname(token, request):
+        nickname = None
+
+        """
+        Getting nickname from token, if it was provided or from request, if it was register / login connection
+        """
+
+        if token is not None:
+            decoded_token = jwt.decode(token, 'sdfsdfsdf', algorithms="HS256")
+            nickname = decoded_token['nickname']
+        else:
+            nickname = request.get('nickname')
+        return nickname
+
     @staticmethod
     def get_expires_date(token):
         """
